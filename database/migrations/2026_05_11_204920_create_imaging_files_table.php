@@ -12,6 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('imaging_request_id')->constrained('imaging_requests')->cascadeOnDelete();
             $table->foreignId('uploaded_by')->constrained('staff')->cascadeOnDelete();
+            $table->foreignId('device_id')->nullable()->constrained('clinic_devices')->nullOnDelete();
             $table->string('file_path');
             $table->string('file_name');
             $table->string('file_type');
@@ -22,6 +23,10 @@ return new class extends Migration
             $table->dateTime('captured_at')->nullable();
             $table->boolean('is_primary')->default(false);
             $table->timestamp('created_at')->nullable();
+
+            $table->index('modality');
+            $table->index('captured_at');
+            $table->index('is_primary');
         });
     }
 

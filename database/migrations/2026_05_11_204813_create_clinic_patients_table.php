@@ -14,9 +14,13 @@ return new class extends Migration
             $table->string('passport_id')->nullable();
             $table->string('name');
             $table->string('phone')->nullable();
+            $table->string('gender')->nullable();
+            $table->date('birth_date')->nullable();
             $table->string('address')->nullable();
             $table->date('birth_date')->nullable();
+            $table->string('status')->default('active');
             $table->timestamps();
+            $table->foreignId('created_by')->nullable()->constrained('staff')->nullOnDelete();
         });
     }
 

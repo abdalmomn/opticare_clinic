@@ -6,7 +6,6 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Modules\Appointments\Models\Appointment;
 use App\Modules\MedicalRecords\Models\VisitRecord;
 use App\Modules\MedicalRecords\Models\VitalSign;
 use App\Modules\MedicalRecords\Models\Prescription;
@@ -19,10 +18,13 @@ use App\Modules\Payments\Models\Invoice;
 use App\Modules\Payments\Models\Payment;
 use App\Modules\Chat\Models\Conversation;
 use App\Modules\Clinic\Models\ClinicDevice;
+use App\Modules\RolesPermissions\Models\StaffClinicRole;
 
 class Staff extends Authenticatable
 {
     use HasApiTokens, HasRoles;
+
+    protected $guard_name = 'api';
 
     protected $table = 'staff';
 
@@ -108,5 +110,44 @@ class Staff extends Authenticatable
     public function scheduleExceptions()
     {
         return $this->morphMany(\App\Modules\Scheduling\Models\ScheduleException::class, 'schedulable');
+    }
+
+
+    public function clinicRoles(): HasMany
+    {
+        return $this->hasMany(StaffClinicRole::class, 'staff_id');
+    }
+    public function activeClinicRoles(): HasMany
+    {
+        return $this->hasMany(StaffClinicRole::class, 'staff_id')
+                    ->active();
+    }
+
+    public function belongsToClinic(int $clinicId): bool
+    {
+        return $this->clinicRoles()
+                    ->where('clinic_id', $clinicId)
+                    ->active()
+                    ->exists();
+    }
+
+    public function roleInClinic(int $clinicId): ?StaffClinicRole
+    {
+        return $this->clinicRoles()
+                    ->where('clinic_id', $clinicId)
+                    ->active()
+                    ->first();
+    }
+
+    public function isVisitingExpired(): bool
+    {
+        if (! $this->hasRole('visiting_doctor')) {
+            return false;
+        }
+
+        return $this->clinicRoles()
+                    ->where('role_name', 'visiting_doctor')
+                    ->expired()
+                    ->exists();
     }
 }
