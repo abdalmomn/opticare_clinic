@@ -13,13 +13,12 @@ use App\Modules\MedicalRecords\Models\DoctorPrivateNote;
 use App\Modules\Imaging\Models\ImagingRequest;
 
 use App\Modules\RolesPermissions\Enums\RoleEnum;
-use App\Modules\RolesPermissions\Models\StaffClinicRole;
 
 use App\Modules\RolesPermissions\Policies\AppointmentPolicy;
 use App\Modules\RolesPermissions\Policies\MedicalRecordPolicy;
 use App\Modules\RolesPermissions\Policies\ImagingPolicy;
 use App\Modules\RolesPermissions\Policies\StaffPolicy;
-
+use App\Modules\RolesPermissions\Helpers\AccessControlHelper;
 class RolesPermissionsServiceProvider extends ServiceProvider
 {
     public function register(): void
@@ -46,9 +45,11 @@ class RolesPermissionsServiceProvider extends ServiceProvider
     private function registerGates(): void
     {
         Gate::define('can-assign-roles', function (Staff $staff): bool {
-            return $staff->getRoleNames()
-                ->intersect(RoleEnum::canAssignRoles()) // doctor can not assign roles, because he is out of intersection with assignable roles.
-                ->isNotEmpty();
+            return AccessControlHelper::actorCanManageRoles($staff);
+        });
+
+        Gate::define('can-override-permissions', function (Staff $staff): bool {
+            return AccessControlHelper::actorCanOverridePermissions($staff);
         });
 
         Gate::define('view-patient-in-center', function (Staff $staff, int $patientId, bool $isCenter = false): bool {
@@ -82,7 +83,7 @@ class RolesPermissionsServiceProvider extends ServiceProvider
     private function loadRoutes(): void
     {
         Route::middleware('api')
-            ->prefix('api/roles')
+            ->prefix('api/role-permission')
             ->group(app_path('Modules/RolesPermissions/Routes/api.php'));
     }
 }

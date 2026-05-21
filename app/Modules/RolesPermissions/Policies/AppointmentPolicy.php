@@ -6,17 +6,18 @@ use App\Modules\Authentication\Models\Staff;
 use App\Modules\Appointments\Models\Appointment;
 use App\Modules\RolesPermissions\Constants\PermissionList;
 use App\Modules\RolesPermissions\Enums\RoleEnum;
+use App\Modules\RolesPermissions\Helpers\AccessControlHelper;
 
 class AppointmentPolicy
 {
     public function viewAny(Staff $staff): bool
     {
-        return $staff->hasPermissionTo(PermissionList::VIEW_APPOINTMENTS, 'api');
+        return AccessControlHelper::staffHasPermission($staff, PermissionList::VIEW_APPOINTMENTS);
     }
 
     public function view(Staff $staff, Appointment $appointment): bool
     {
-        if (! $staff->hasPermissionTo(PermissionList::VIEW_APPOINTMENTS, 'api')) {
+        if (! AccessControlHelper::staffHasPermission($staff, PermissionList::VIEW_APPOINTMENTS)) {
             return false;
         }
 
@@ -41,36 +42,36 @@ class AppointmentPolicy
 
     public function create(Staff $staff): bool
     {
-        return $staff->hasPermissionTo(PermissionList::CREATE_APPOINTMENT, 'api');
+        return AccessControlHelper::staffHasPermission($staff, PermissionList::CREATE_APPOINTMENT);
     }
 
     public function cancel(Staff $staff): bool
     {
-        return $staff->hasPermissionTo(PermissionList::CANCEL_APPOINTMENT, 'api');
+        return AccessControlHelper::staffHasPermission($staff, PermissionList::CANCEL_APPOINTMENT);
     }
 
     public function confirm(Staff $staff, Appointment $appointment): bool
     {
-        return $staff->hasPermissionTo(PermissionList::CONFIRM_APPOINTMENT, 'api');
+        return AccessControlHelper::staffHasPermission($staff, PermissionList::CONFIRM_APPOINTMENT);
     }
 
     public function managePatientStatus(Staff $staff): bool
     {
-        return $staff->hasPermissionTo(PermissionList::MANAGE_PATIENT_STATUS, 'api');
+        return AccessControlHelper::staffHasPermission($staff, PermissionList::MANAGE_PATIENT_STATUS);
     }
 
     public function assignToDoctor(Staff $staff): bool
     {
-        return $staff->hasPermissionTo(PermissionList::ASSIGN_PATIENT_TO_DOCTOR, 'api');
+        return AccessControlHelper::staffHasPermission($staff, PermissionList::ASSIGN_PATIENT_TO_DOCTOR);
     }
 
     public function bookFollowUp(Staff $staff): bool
     {
-        return $staff->hasPermissionTo(PermissionList::BOOK_FOLLOW_UP, 'api');
+        return AccessControlHelper::staffHasPermission($staff, PermissionList::BOOK_FOLLOW_UP);
     }
 
     public function bookSurgery(Staff $staff): bool
     {
-        return $staff->hasPermissionTo(PermissionList::BOOK_SURGERY, 'api');
+        return AccessControlHelper::staffHasPermission($staff, PermissionList::BOOK_SURGERY);
     }
 }
