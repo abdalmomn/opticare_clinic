@@ -42,6 +42,11 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        'api' => [
+        'driver'   => 'sanctum',   // أو 'token' إذا لم يكن Sanctum مُفعَّلاً
+        'provider' => 'staff',
+        ],
     ],
 
     /*
@@ -67,10 +72,10 @@ return [
             'model' => env('AUTH_MODEL', User::class),
         ],
 
-        // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
-        // ],
+        'staff' => [
+        'driver' => 'eloquent',
+        'model'  => App\Modules\Authentication\Models\Staff::class,
+    ],
     ],
 
     /*

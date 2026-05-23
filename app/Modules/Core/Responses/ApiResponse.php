@@ -117,4 +117,40 @@ class ApiResponse
             code: 'SERVER_ERROR'
         );
     }
+
+
+    public static function handleException(\Throwable $e): \Illuminate\Http\JsonResponse
+{
+    if ($e instanceof \Illuminate\Auth\AuthenticationException) {
+        return self::unauthorized('Unauthenticated. Please login first.');
+    }
+
+    if ($e instanceof \Illuminate\Auth\Access\AuthorizationException) {
+        return self::forbidden('You are not authorized to perform this action.');
+    }
+
+    if ($e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException) {
+        return self::notFound('The requested resource was not found.');
+    }
+
+    if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpException) {
+        return self::error(
+            message:    $e->getMessage() ?: 'An error occurred.',
+            statusCode: $e->getStatusCode(),
+        );
+    }
+
+    if ($e instanceof \Illuminate\Validation\ValidationException) {
+        return self::validationError(
+            errors:  $e->errors(),
+            message: 'Validation failed.'
+        );
+    }
+
+    $message = app()->environment('production')
+        ? 'Internal server error.'
+        : $e->getMessage();
+
+    return self::serverError($message);
+}
 }

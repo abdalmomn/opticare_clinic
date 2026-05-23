@@ -31,16 +31,47 @@ class Staff extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'phone',
         'password',
+        'is_active',
+        'email_verified_at',
+        'last_login_at',
+        'password_changed_at',
     ];
 
-    protected $hidden = ['password'];
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
 
-    protected $casts = ['password' => 'hashed'];
+    protected $casts = [
+        'password'           => 'hashed',
+        'is_active'          => 'boolean',
+        'email_verified_at'  => 'datetime',
+        'last_login_at'      => 'datetime',
+        'password_changed_at'=> 'datetime',
+    ];
 
-    // -------------------------
-    // Relationships
-    // -------------------------
+    // ─── Auth Helpers ─────────────────────────────────────────
+
+    public function isActive(): bool
+    {
+        return (bool) $this->is_active;
+    }
+
+    public function markLastLogin(): void
+    {
+        $this->timestamps = false;
+        $this->update(['last_login_at' => now()]);
+        $this->timestamps = true;
+    }
+
+    // ─── Relationships ────────────────────────────────────────
+
+    public function passwordResetOtps(): HasMany
+    {
+        return $this->hasMany(StaffPasswordResetOtp::class, 'staff_id');
+    }
 
     public function visitRecords(): HasMany
     {
@@ -112,42 +143,29 @@ class Staff extends Authenticatable
         return $this->morphMany(\App\Modules\Scheduling\Models\ScheduleException::class, 'schedulable');
     }
 
-
     public function clinicRoles(): HasMany
     {
         return $this->hasMany(StaffClinicRole::class, 'staff_id');
     }
+
     public function activeClinicRoles(): HasMany
     {
-        return $this->hasMany(StaffClinicRole::class, 'staff_id')
-                    ->active();
+        return $this->hasMany(StaffClinicRole::class, 'staff_id')->active();
     }
 
     public function belongsToClinic(int $clinicId): bool
     {
         return $this->clinicRoles()
-                    ->where('clinic_id', $clinicId)
-                    ->active()
-                    ->exists();
+            ->where('clinic_id', $clinicId)
+            ->active()
+            ->exists();
     }
 
     public function roleInClinic(int $clinicId): ?StaffClinicRole
     {
         return $this->clinicRoles()
-                    ->where('clinic_id', $clinicId)
-                    ->active()
-                    ->first();
-    }
-
-    public function isVisitingExpired(): bool
-    {
-        if (! $this->hasRole('visiting_doctor')) {
-            return false;
-        }
-
-        return $this->clinicRoles()
-                    ->where('role_name', 'visiting_doctor')
-                    ->expired()
-                    ->exists();
+            ->where('clinic_id', $clinicId)
+            ->active()
+            ->first();
     }
 }

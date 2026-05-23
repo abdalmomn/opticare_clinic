@@ -13,6 +13,7 @@ use App\Modules\RolesPermissions\Requests\GrantPermissionRequest;
 use App\Modules\RolesPermissions\Requests\RevokePermissionRequest;
 use App\Modules\RolesPermissions\Requests\ClearPermissionOverrideRequest;
 use App\Modules\RolesPermissions\Requests\ClearAllPermissionOverrideRequest;
+use Illuminate\Support\Facades\Auth;
 
 class AccessControlController extends Controller
 {
@@ -45,8 +46,7 @@ class AccessControlController extends Controller
 
     public function assignRole(AssignRoleRequest $request): JsonResponse
     {
-        // temporary until auth is ready
-        $user = Staff::first();
+        $user = Auth::user();
 
         $result = $this->accessControlService->assignRole(
             $user,
@@ -61,8 +61,7 @@ class AccessControlController extends Controller
 
     public function revokeRole(RevokeRoleRequest $request): JsonResponse
     {
-        // temporary until auth is ready
-        $user = Staff::first();
+        $user = Auth::user();
 
         $result = $this->accessControlService->revokeRole(
             $user,
@@ -77,7 +76,7 @@ class AccessControlController extends Controller
 
     public function grantPermission(GrantPermissionRequest $request): JsonResponse
     {
-        $user = Staff::first();
+        $user = Auth::user();
 
         $result = $this->accessControlService->grantPermission(
             $user,
@@ -92,7 +91,7 @@ class AccessControlController extends Controller
 
     public function revokePermission(RevokePermissionRequest $request): JsonResponse
     {
-        $user = Staff::first();
+        $user = Auth::user();
 
         $result = $this->accessControlService->revokePermission(
             $user,
@@ -107,7 +106,7 @@ class AccessControlController extends Controller
 
     public function clearPermissionOverride(ClearPermissionOverrideRequest $request): JsonResponse
     {
-        $user = Staff::first();
+        $user = Auth::user();
 
         $result = $this->accessControlService->clearPermissionOverride(
             $user,
@@ -122,7 +121,7 @@ class AccessControlController extends Controller
 
     public function clearAllPermissionOverride(ClearAllPermissionOverrideRequest $request): JsonResponse
     {
-        $user = Staff::first();
+        $user = Auth::user();
 
         $result = $this->accessControlService->clearAllPermissionOverride(
             $user,
