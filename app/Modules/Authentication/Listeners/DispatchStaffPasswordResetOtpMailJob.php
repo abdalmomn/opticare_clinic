@@ -9,6 +9,11 @@ class DispatchStaffPasswordResetOtpMailJob
 {
     public function handle(StaffPasswordResetOtpRequested $event): void
     {
+    $channel = config('opticare.otp_channel', 'email');
+
+        if (! in_array($channel, ['email', 'both'], true)) {
+            return;
+        }
         SendStaffPasswordResetOtpMailJob::dispatch(
             email: $event->email,
             otp: $event->otp

@@ -2,13 +2,12 @@
 
 namespace App\Modules\Authentication\Services;
 
+use Illuminate\Support\Facades\Hash;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use App\Modules\Authentication\Helpers\AuthHelper;
+use App\Modules\Authentication\Events\StaffPasswordResetOtpRequested;
 use App\Modules\Authentication\Repositories\StaffRepository;
 use App\Modules\Authentication\Repositories\StaffPasswordResetOtpRepository;
-use Illuminate\Support\Facades\Hash;
-use App\Modules\Authentication\Events\StaffPasswordResetOtpRequested;
-use App\Modules\Authentication\Services\CaptchaService;
 
 class PasswordResetService
 {
@@ -20,25 +19,48 @@ class PasswordResetService
 
     public function sendCode(array $data, string $ip, string $userAgent): array
     {
-        $email        = $data['email'];
+        $email = $data['email'];
         $captchaToken = $data['captcha_token'] ?? null;
 
+        $expectedAction = config('services.recaptcha.expected_action');
+
+        $expectedAction = filled($expectedAction)
+            ? $expectedAction
+            : null;
+
         $captchaPassed = $this->captchaService->verify(
-        captchaToken: $captchaToken,
-        ip: $ip,
-        expectedAction: 'forgot_password'
+            captchaToken: $captchaToken,
+            ip: $ip,
+            expectedAction: $expectedAction
         );
 
         if (! $captchaPassed) {
             throw new HttpException(422, 'Captcha verification failed.');
         }
 
+        $otpChannel = $this->otpChannel();
+
         $staff = $this->staffRepository->findActiveByEmail($email);
+
+        if (! $staff) {
+            return $this->genericSendCodeResponse();
+        }
+
+        if ($otpChannel === 'sms' && empty($staff->phone)) {
+            throw new HttpException(422, 'This staff account does not have a phone number.');
+        }
+
+        if ($otpChannel === 'both' && empty($staff->phone)) {
+            $otpChannel = 'email';
+        }
 
         $existingRecord = $this->otpRepository->findLatestActiveByEmail($email);
 
         if ($existingRecord && ! $existingRecord->canResend()) {
-            $waitSeconds = (int) now()->diffInSeconds($existingRecord->resend_available_at, false);
+            $waitSeconds = (int) now()->diffInSeconds(
+                $existingRecord->resend_available_at,
+                false
+            );
 
             throw new HttpException(
                 429,
@@ -46,16 +68,17 @@ class PasswordResetService
             );
         }
 
-        $plainOtp        = AuthHelper::generateOtp(6);
-        $otpHash         = AuthHelper::hashOtp($plainOtp);
-        $otpExpiresAt    = now()->addMinutes(10);
+        $plainOtp     = AuthHelper::generateOtp(6);
+        $otpHash      = AuthHelper::hashOtp($plainOtp);
+        $otpExpiresAt = now()->addMinutes(10);
+
         $captchaHash = $captchaToken
             ? AuthHelper::hashCaptchaToken($captchaToken)
             : null;
 
         if ($existingRecord) {
-            $nextDelay           = $existingRecord->nextResendDelaySeconds();
-            $resendAvailableAt   = now()->addSeconds($nextDelay);
+            $nextDelay = $existingRecord->nextResendDelaySeconds();
+            $resendAvailableAt = now()->addSeconds($nextDelay);
 
             $this->otpRepository->updateResendData(
                 $existingRecord,
@@ -68,34 +91,38 @@ class PasswordResetService
         } else {
             $this->otpRepository->invalidateOldRecords($email);
 
-            $baseDelay         = (int) config('opticare.otp_resend_base_seconds', 20);
+            $baseDelay = (int) config('opticare.otp_resend_base_seconds', 20);
             $resendAvailableAt = now()->addSeconds($baseDelay);
 
             $record = $this->otpRepository->createOtpRecord([
-                'staff_id'           => $staff?->id,
-                'email'              => $email,
-                'captcha_token_hash' => $captchaHash,
-                'otp_hash'           => $otpHash,
-                'otp_expires_at'     => $otpExpiresAt,
-                'resend_count'       => 0,
-                'resend_available_at'=> $resendAvailableAt,
-                'ip_address'         => $ip,
-                'user_agent'         => $userAgent,
+                'staff_id'            => $staff->id,
+                'email'               => $email,
+                'captcha_token_hash'  => $captchaHash,
+                'otp_hash'            => $otpHash,
+                'otp_expires_at'      => $otpExpiresAt,
+                'resend_count'        => 0,
+                'resend_available_at' => $resendAvailableAt,
+                'ip_address'          => $ip,
+                'user_agent'          => $userAgent,
             ]);
         }
 
-        event(new StaffPasswordResetOtpRequested($email, $plainOtp));
+        event(new StaffPasswordResetOtpRequested(
+            email: $email,
+            otp: $plainOtp,
+            phone: in_array($otpChannel, ['sms', 'both'], true) ? $staff->phone : null
+        ));
 
         return [
             'resend_available_at' => $record->resend_available_at->toISOString(),
+            'otp_channel' => $otpChannel,
         ];
     }
-
 
     public function verifyOtp(array $data): array
     {
         $email = $data['email'];
-        $otp   = $data['otp'];
+        $otp = $data['otp'];
 
         $record = $this->otpRepository->findValidOtpRecord($email);
 
@@ -111,17 +138,20 @@ class PasswordResetService
             throw new HttpException(422, 'The OTP code is incorrect.');
         }
 
-        $plainResetToken  = AuthHelper::generateResetToken(64);
-        $resetTokenHash   = AuthHelper::hashResetToken($plainResetToken);
+        $plainResetToken = AuthHelper::generateResetToken(64);
+        $resetTokenHash = AuthHelper::hashResetToken($plainResetToken);
         $resetTokenExpiry = now()->addMinutes(15);
 
-        $this->otpRepository->markAsVerified($record, $resetTokenHash, $resetTokenExpiry);
+        $this->otpRepository->markAsVerified(
+            $record,
+            $resetTokenHash,
+            $resetTokenExpiry
+        );
 
         return [
             'reset_token' => $plainResetToken,
         ];
     }
-
 
     public function resetPassword(array $data): void
     {
@@ -143,9 +173,36 @@ class PasswordResetService
             throw new HttpException(422, 'The new password must be different from the current password.');
         }
 
-        $this->staffRepository->updatePassword($staff, Hash::make($data['password']));
+        $this->staffRepository->updatePassword(
+            $staff,
+            Hash::make($data['password'])
+        );
+
         $this->otpRepository->markAsUsed($record);
 
         $staff->tokens()->delete();
+    }
+
+    private function otpChannel(): string
+    {
+        $channel = config('opticare.otp_channel', 'email');
+
+        if (! in_array($channel, ['email', 'sms', 'both'], true)) {
+            return 'email';
+        }
+
+        return $channel;
+    }
+
+    private function genericSendCodeResponse(): array
+    {
+        $baseDelay = (int) config('opticare.otp_resend_base_seconds', 20);
+
+        return [
+            'resend_available_at' => now()
+                ->addSeconds($baseDelay)
+                ->toISOString(),
+            'otp_channel' => $this->otpChannel(),
+        ];
     }
 }

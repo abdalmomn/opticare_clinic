@@ -21,4 +21,6 @@ return [
     'clinic_id' => env('OPTICARE_CLINIC_ID', 1),
 
     'captcha_enabled' => env('OPTICARE_CAPTCHA_ENABLED', false),
+    
+    'otp_channel' => env('OPTICARE_OTP_CHANNEL', 'email'),
 ];

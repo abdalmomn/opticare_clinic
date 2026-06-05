@@ -35,9 +35,15 @@ return [
         ],
     ],
     'recaptcha' => [
-    'secret_key'      => env('RECAPTCHA_SECRET_KEY'),
-    'min_score'       => env('RECAPTCHA_MIN_SCORE', 0.5),
-    'expected_action' => env('RECAPTCHA_EXPECTED_ACTION', 'forgot_password'),
+        'site_key'        => env('RECAPTCHA_SITE_KEY'),
+        'secret_key'      => env('RECAPTCHA_SECRET_KEY'),
+        'min_score'       => env('RECAPTCHA_MIN_SCORE', 0.5),
+        'expected_action' => env('RECAPTCHA_EXPECTED_ACTION'),
     ],
-
+    'traccar_sms' => [
+        'enabled'              => env('TRACCAR_SMS_ENABLED', false),
+        'url'                  => env('TRACCAR_SMS_URL'),
+        'token'                => env('TRACCAR_SMS_TOKEN'),
+        'default_country_code' => env('TRACCAR_SMS_DEFAULT_COUNTRY_CODE', '963'),
+    ],
 ];

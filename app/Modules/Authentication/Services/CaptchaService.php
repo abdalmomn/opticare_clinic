@@ -42,7 +42,7 @@ class CaptchaService
             return false;
         }
 
-        $minScore = (float) config('services.recaptcha.min_score', 0.5);
+        $minScore = (float) config('services.recaptcha.min_score', 0.3);
         $score = (float) ($result['score'] ?? 0);
 
         return $score >= $minScore;
