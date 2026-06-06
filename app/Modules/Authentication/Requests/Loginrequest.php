@@ -22,9 +22,9 @@ class LoginRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'email.required'    => 'Email address is required.',
-            'email.email'       => 'Please provide a valid email address.',
-            'password.required' => 'Password is required.',
+            'email.required'    => __('auth.validation.email_required'),
+            'email.email'       => __('auth.validation.email_valid'),
+            'password.required' => __('auth.validation.password_required'),
         ];
     }
 }

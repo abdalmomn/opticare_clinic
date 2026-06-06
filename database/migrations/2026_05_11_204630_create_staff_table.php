@@ -18,6 +18,12 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->timestamp('last_login_at')->nullable();
             $table->timestamp('password_changed_at')->nullable();
+            $table->unsignedTinyInteger('failed_login_attempts')
+                ->default(0);
+            $table->boolean('password_reset_required')
+                ->default(false);
+            $table->timestamp('password_reset_required_at')
+                ->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

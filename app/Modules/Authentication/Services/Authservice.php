@@ -7,6 +7,7 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 use App\Modules\Authentication\Models\Staff;
 use App\Modules\Authentication\Helpers\AuthHelper;
 use App\Modules\Authentication\Repositories\StaffRepository;
+use App\Modules\Core\Exceptions\ApiException;
 
 class AuthService
 {
@@ -14,40 +15,77 @@ class AuthService
         protected StaffRepository $staffRepository
     ) {}
 
-    // ─── Login ────────────────────────────────────────────────
-
     public function login(array $data, string $ip, string $userAgent): array
     {
         $staff = $this->staffRepository->findByEmail($data['email']);
 
         if (! $staff) {
-            throw new HttpException(401, 'The provided credentials are incorrect.');
+            throw new ApiException(
+                401,
+                __('auth.errors.invalid_credentials'),
+                'INVALID_CREDENTIALS'
+            );
+        }
+
+        if ($staff->password_reset_required) {
+            throw new ApiException(
+                423,
+                __('auth.errors.password_reset_required'),
+                'PASSWORD_RESET_REQUIRED'
+            );
         }
 
         if (! Hash::check($data['password'], $staff->password)) {
-            throw new HttpException(401, 'The provided credentials are incorrect.');
+            $requiresReset = $this->handleFailedLoginAttempt($staff);
+
+            if ($requiresReset) {
+                throw new ApiException(
+                    423,
+                    __('auth.errors.password_reset_required'),
+                    'PASSWORD_RESET_REQUIRED'
+                );
+            }
+
+            throw new ApiException(
+                401,
+                __('auth.errors.invalid_credentials'),
+                'INVALID_CREDENTIALS'
+            );
         }
 
         if (! $staff->isActive()) {
-            throw new HttpException(403, 'Your account has been deactivated. Please contact your administrator.');
+            throw new ApiException(
+                403,
+                __('auth.errors.account_deactivated'),
+                'ACCOUNT_DEACTIVATED'
+            );
         }
 
+        $this->clearFailedLoginAttempts($staff);
+
         $this->staffRepository->markLastLogin($staff);
+
+        $expiresAt = now()->addMinutes(AuthHelper::tokenTtlMinutes());
 
         $token = $staff->createToken(
             name: 'staff-auth',
             abilities: ['*'],
-            expiresAt: null
+            expiresAt: $expiresAt
         )->plainTextToken;
 
+        $freshStaff = $staff->fresh([
+            'activeClinicRoles',
+        ]);
+
+        $clinicRoles = $freshStaff->activeClinicRoles;
+
         return [
-            'token'      => $token,
-            'token_type' => 'Bearer',
-            'staff'      => AuthHelper::formatStaffResponse($staff->fresh()),
+            'token'            => $token,
+            'token_expires_at' => $expiresAt->toISOString(),
+            'clinic_id'        => $clinicRoles->pluck('clinic_id')->first(),
+            'staff'            => AuthHelper::formatStaffResponse($freshStaff),
         ];
     }
-
-    // ─── Logout ───────────────────────────────────────────────
 
     public function logout(Staff $staff): void
     {
@@ -58,11 +96,11 @@ class AuthService
     public function changePassword(Staff $staff, array $data): void
     {
         if (! Hash::check($data['current_password'], $staff->password)) {
-            throw new HttpException(422, 'The current password is incorrect.');
+            throw new HttpException(422, __('auth.errors.current_password_incorrect'));
         }
 
         if (Hash::check($data['password'], $staff->password)) {
-            throw new HttpException(422, 'The new password must be different from the current password.');
+            throw new HttpException(422, __('auth.errors.new_password_same_as_current'));
         }
 
         $this->staffRepository->updatePassword($staff, Hash::make($data['password']));
@@ -70,5 +108,39 @@ class AuthService
         $staff->tokens()
             ->where('id', '!=', $staff->currentAccessToken()->id)
             ->delete();
+    }
+
+    private function handleFailedLoginAttempt(Staff $staff): bool
+    {
+        $maxAttempts = (int) config('opticare.auth.max_failed_login_attempts', 5);
+
+        $attempts = ((int) $staff->failed_login_attempts) + 1;
+
+        $requiresReset = $attempts >= $maxAttempts;
+
+        $staff->forceFill([
+            'failed_login_attempts' => $attempts,
+            'password_reset_required' => $requiresReset,
+            'password_reset_required_at' => $requiresReset ? now() : null,
+        ])->save();
+
+        return $requiresReset;
+    }
+
+    private function clearFailedLoginAttempts(Staff $staff): void
+    {
+        if (
+            (int) $staff->failed_login_attempts === 0
+            && ! $staff->password_reset_required
+            && $staff->password_reset_required_at === null
+        ) {
+            return;
+        }
+
+        $staff->forceFill([
+            'failed_login_attempts' => 0,
+            'password_reset_required' => false,
+            'password_reset_required_at' => null,
+        ])->save();
     }
 }

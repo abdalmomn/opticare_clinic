@@ -25,9 +25,9 @@ class ForgotPasswordSendCodeRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'email.required'         => 'Email address is required.',
-            'email.email'            => 'Please provide a valid email address.',
-            'captcha_token.required' => 'Captcha verification is required.',
+            'email.required'         => __('auth.validation.email_required'),
+            'email.email'            => __('auth.validation.email_valid'),
+            'captcha_token.required' => __('auth.validation.captcha_required'),
         ];
     }
 }

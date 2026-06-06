@@ -35,7 +35,7 @@ class PasswordResetService
         );
 
         if (! $captchaPassed) {
-            throw new HttpException(422, 'Captcha verification failed.');
+            throw new HttpException(422, __('auth.errors.captcha_failed'));
         }
 
         $otpChannel = $this->otpChannel();
@@ -47,7 +47,7 @@ class PasswordResetService
         }
 
         if ($otpChannel === 'sms' && empty($staff->phone)) {
-            throw new HttpException(422, 'This staff account does not have a phone number.');
+            throw new HttpException(422, __('auth.errors.staff_phone_required'));
         }
 
         if ($otpChannel === 'both' && empty($staff->phone)) {
@@ -64,7 +64,7 @@ class PasswordResetService
 
             throw new HttpException(
                 429,
-                "Please wait {$waitSeconds} seconds before requesting a new code."
+                __('auth.errors.resend_wait', ['seconds' => $waitSeconds])
             );
         }
 
@@ -110,7 +110,8 @@ class PasswordResetService
         event(new StaffPasswordResetOtpRequested(
             email: $email,
             otp: $plainOtp,
-            phone: in_array($otpChannel, ['sms', 'both'], true) ? $staff->phone : null
+            phone: in_array($otpChannel, ['sms', 'both'], true) ? $staff->phone : null,
+            locale: app()->getLocale()
         ));
 
         return [
@@ -127,15 +128,15 @@ class PasswordResetService
         $record = $this->otpRepository->findValidOtpRecord($email);
 
         if (! $record) {
-            throw new HttpException(422, 'No valid OTP request found. Please request a new code.');
+            throw new HttpException(422, __('auth.errors.no_valid_otp'));
         }
 
         if ($record->isOtpExpired()) {
-            throw new HttpException(422, 'The OTP code has expired. Please request a new code.');
+            throw new HttpException(422, __('auth.errors.otp_expired'));
         }
 
         if (! AuthHelper::verifyOtp($otp, $record->otp_hash)) {
-            throw new HttpException(422, 'The OTP code is incorrect.');
+            throw new HttpException(422, __('auth.errors.otp_incorrect'));
         }
 
         $plainResetToken = AuthHelper::generateResetToken(64);
@@ -160,23 +161,30 @@ class PasswordResetService
         $record = $this->otpRepository->findVerifiedUnusedByResetTokenHash($resetTokenHash);
 
         if (! $record) {
-            throw new HttpException(422, 'Invalid or expired reset token.');
+            throw new HttpException(422, __('auth.errors.invalid_reset_token'));
         }
 
         $staff = $this->staffRepository->findActiveByEmail($record->email);
 
         if (! $staff) {
-            throw new HttpException(404, 'Staff account not found.');
+            throw new HttpException(404, __('auth.errors.staff_not_found'));
         }
 
         if (Hash::check($data['password'], $staff->password)) {
-            throw new HttpException(422, 'The new password must be different from the current password.');
+            throw new HttpException(422, __('auth.errors.new_password_same_as_current'));
         }
 
         $this->staffRepository->updatePassword(
             $staff,
             Hash::make($data['password'])
         );
+
+        $staff->forceFill([
+            'failed_login_attempts' => 0,
+            'password_reset_required' => false,
+            'password_reset_required_at' => null,
+            'password_changed_at' => now(),
+        ])->save();
 
         $this->otpRepository->markAsUsed($record);
 

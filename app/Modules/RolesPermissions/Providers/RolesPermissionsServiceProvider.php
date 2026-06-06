@@ -57,12 +57,10 @@ class RolesPermissionsServiceProvider extends ServiceProvider
             if (!$isCenter) {
                 return true;
             }
-            // if user is clinic-level admin, he can view all patients in his clinic
             // if user is secretary, he can view all patients in his clinic
             // if user is center-level admin, he can view all patients in the center
             if ($staff->hasAnyRole([
                 RoleEnum::MEDICAL_CENTER_ADMIN->value,
-                RoleEnum::CLINIC_ADMIN->value,
                 RoleEnum::SECRETARY->value,
             ], 'api')) {
                 return true;

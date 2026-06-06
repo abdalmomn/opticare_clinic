@@ -11,14 +11,14 @@ class TraccarSmsService
     public function send(string $phone, string $message): array
     {
         if (! config('services.traccar_sms.enabled', false)) {
-            throw new HttpException(422, 'Traccar SMS service is disabled.');
+            throw new HttpException(422, __('auth.errors.traccar_disabled'));
         }
 
         $url = config('services.traccar_sms.url');
         $token = config('services.traccar_sms.token');
 
         if (empty($url) || empty($token)) {
-            throw new HttpException(500, 'Traccar SMS service is not configured.');
+            throw new HttpException(500, __('auth.errors.traccar_not_configured'));
         }
 
         $phone = $this->normalizePhone($phone);
@@ -41,7 +41,7 @@ class TraccarSmsService
                 'response' => $response->body(),
             ]);
 
-            throw new HttpException(502, 'Failed to send SMS message.');
+            throw new HttpException(502, __('auth.errors.traccar_send_failed'));
         }
 
         return $response->json() ?? [

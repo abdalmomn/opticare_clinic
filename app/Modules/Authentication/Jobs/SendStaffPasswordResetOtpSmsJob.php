@@ -20,12 +20,17 @@ class SendStaffPasswordResetOtpSmsJob implements ShouldQueue
 
     public function __construct(
         public readonly string $phone,
-        public readonly string $otp
+        public readonly string $otp,
+        public readonly string $locale = 'en'
     ) {}
 
     public function handle(TraccarSmsService $smsService): void
     {
-        $message = "Your OptiCare password reset code is: {$this->otp}";
+        app()->setLocale($this->locale);
+
+        $message = __('auth.sms.password_reset_otp', [
+            'otp' => $this->otp,
+        ]);
 
         $smsService->send(
             phone: $this->phone,

@@ -22,9 +22,10 @@ class ForgotPasswordVerifyOtpRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'email.required'         => 'Email address is required.',
-            'otp.required'           => 'OTP code is required.',
-            'otp.digits'             => 'OTP code must be exactly 6 digits.',
+            'email.required' => __('auth.validation.email_required'),
+            'email.email'    => __('auth.validation.email_valid'),
+            'otp.required'   => __('auth.validation.otp_required'),
+            'otp.digits'     => __('auth.validation.otp_digits'),
         ];
     }
 }

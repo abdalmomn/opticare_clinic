@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Event;
 use App\Modules\Authentication\Events\StaffPasswordResetOtpRequested;
 use App\Modules\Authentication\Listeners\DispatchStaffPasswordResetOtpMailJob;
 use App\Modules\Authentication\Listeners\DispatchStaffPasswordResetOtpSmsJob;
+use App\Modules\Authentication\Events\StaffAccountCreated;
+use App\Modules\Authentication\Listeners\DispatchStaffWelcomeEmailJob;
 class AuthenticationServiceProvider extends ServiceProvider
 {
     public function register(): void
@@ -31,7 +33,11 @@ class AuthenticationServiceProvider extends ServiceProvider
         Event::listen(
         StaffPasswordResetOtpRequested::class,
         DispatchStaffPasswordResetOtpSmsJob::class
-    );
+        );
+        Event::listen(
+            StaffAccountCreated::class,
+            DispatchStaffWelcomeEmailJob::class
+        );
     }
 
     protected function loadRoutes(): void

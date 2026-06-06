@@ -22,4 +22,12 @@ class ClearAllPermissionOverrideRequest extends FormRequest
             ],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'staff_id.required' => __('role_permission.validation.staff_required'),
+            'staff_id.exists'   => __('role_permission.validation.staff_exists'),
+        ];
+    }
 }

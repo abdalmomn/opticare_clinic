@@ -1,8 +1,4 @@
 <?php
-// ══════════════════════════════════════════════════════════════
-//  AuthController.php
-//  app/Modules/Authentication/Controllers/AuthController.php
-// ══════════════════════════════════════════════════════════════
 
 namespace App\Modules\Authentication\Controllers;
 
@@ -31,7 +27,7 @@ class AuthController extends Controller
 
         return ApiResponse::success(
             data:    $result,
-            message: 'Logged in successfully.'
+            message: __('auth.messages.logged_in')
         );
     }
 
@@ -41,7 +37,7 @@ class AuthController extends Controller
 
         return ApiResponse::success(
             data:    null,
-            message: 'Logged out successfully.'
+            message: __('auth.messages.logged_out')
         );
     }
 
@@ -54,7 +50,7 @@ class AuthController extends Controller
 
         return ApiResponse::success(
             data:    null,
-            message: 'Password changed successfully.'
+            message: __('auth.messages.password_changed')
         );
     }
 }

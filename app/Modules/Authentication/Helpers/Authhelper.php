@@ -8,8 +8,6 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthHelper
 {
-    // ─── OTP ──────────────────────────────────────────────────
-
     public static function generateOtp(int $digits = 6): string
     {
         $min = (int) str_pad('1', $digits, '0');
@@ -28,7 +26,6 @@ class AuthHelper
         return Hash::check($plainOtp, $otpHash);
     }
 
-    // ─── Reset Token ──────────────────────────────────────────
 
     public static function generateResetToken(int $length = 64): string
     {
@@ -40,7 +37,6 @@ class AuthHelper
         return hash('sha256', $token);
     }
 
-    // ─── Captcha ──────────────────────────────────────────────
 
     public static function hashCaptchaToken(string $token): string
     {
@@ -48,7 +44,6 @@ class AuthHelper
     }
 
 
-    // ─── Temporary Password ───────────────────────────────────
 
     public static function generateTemporaryPassword(int $length = 12): string
     {
@@ -57,7 +52,6 @@ class AuthHelper
         return substr(str_shuffle(str_repeat($chars, 3)), 0, $length);
     }
 
-    // ─── Staff Data Formatter ─────────────────────────────────
 
     public static function formatStaffResponse(Staff $staff): array
     {
@@ -70,5 +64,13 @@ class AuthHelper
             'roles'       => $staff->getRoleNames()->values(),
             'permissions' => $staff->getAllPermissions()->pluck('name')->values(),
         ];
+    }
+
+    public static function tokenTtlMinutes(): int
+    {
+        return (int) config(
+            'opticare.auth.clinic_token_ttl_minutes',
+            config('sanctum.expiration') ?: 1440
+        );
     }
 }

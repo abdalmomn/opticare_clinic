@@ -13,8 +13,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->alias([
-        '' => '',
+        $middleware->api(append: [
+            \App\Modules\Core\Middleware\SetLocaleFromRequest::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

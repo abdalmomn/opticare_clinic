@@ -8,7 +8,7 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 use App\Modules\Authentication\Models\Staff;
 use App\Modules\Authentication\Helpers\AuthHelper;
 use App\Modules\Authentication\Repositories\StaffRepository;
-use App\Modules\RolesPermissions\Enums\RoleEnum;
+use App\Modules\Authentication\Events\StaffAccountCreated;
 use App\Modules\RolesPermissions\Helpers\AccessControlHelper;
 use App\Modules\RolesPermissions\Services\AccessControlService;
 
@@ -19,33 +19,27 @@ class StaffAccountService
         protected AccessControlService $accessControlService
     ) {}
 
-
     public function createStaff(Staff $actor, array $data): array
     {
         if (! AccessControlHelper::actorCanManageRoles($actor)) {
-            throw new HttpException(403, 'You are not authorized to create staff accounts.');
+            throw new HttpException(403, __('auth.errors.unauthorized_create_staff'));
         }
 
-        $role     = $data['role'];
+        $role = $data['role'];
         $clinicId = AccessControlHelper::resolveClinicId($data['clinic_id'] ?? null);
 
         AccessControlHelper::ensureRoleCanBeAssigned($actor, $role);
 
-        if ($role === RoleEnum::CLINIC_ADMIN->value&& ! $actor->hasRole(RoleEnum::MEDICAL_CENTER_ADMIN->value, 'api')) {
-            throw new HttpException(403, 'Only a Medical Center Admin can create a Clinic Admin account.');
-        }
 
         if ($this->staffRepository->emailExists($data['email'])) {
-            throw new HttpException(422, 'A staff member with this email already exists.');
+            throw new HttpException(422, __('auth.errors.email_already_exists'));
         }
 
-        $isTemporaryPassword = empty($data['password']);
-        $plainPassword       = $isTemporaryPassword
+        $plainPassword = empty($data['password'])
             ? AuthHelper::generateTemporaryPassword()
             : $data['password'];
 
-        return DB::transaction(function () use ($actor, $data, $role, $clinicId, $plainPassword, $isTemporaryPassword) {
-
+        return DB::transaction(function () use ($actor, $data, $role, $clinicId, $plainPassword) {
             $newStaff = $this->staffRepository->create([
                 'name'      => $data['name'],
                 'email'     => $data['email'],
@@ -78,18 +72,23 @@ class StaffAccountService
                 }
             }
 
-            $result = [
-                'staff'        => AuthHelper::formatStaffResponse($newStaff->fresh()),
-                'clinic_id'    => $clinicId,
+            DB::afterCommit(function () use ($newStaff, $plainPassword, $role, $clinicId) {
+                event(new StaffAccountCreated(
+                    name: $newStaff->name,
+                    email: $newStaff->email,
+                    temporaryPassword: $plainPassword,
+                    role: $role,
+                    clinicId: $clinicId,
+                    locale: app()->getLocale()
+                ));
+            });
+
+            return [
+                'staff'            => AuthHelper::formatStaffResponse($newStaff->fresh()),
+                'clinic_id'        => $clinicId,
+                'credentials_sent' => true,
+                'note'             => __('auth.notes.credentials_sent'),
             ];
-
-            if ($isTemporaryPassword) {
-                $result['temporary_password'] = $plainPassword;
-                $result['note']               = 'This is a one-time temporary password. The staff member must change it upon first login.';
-            }
-
-            return $result;
         });
     }
-
 }

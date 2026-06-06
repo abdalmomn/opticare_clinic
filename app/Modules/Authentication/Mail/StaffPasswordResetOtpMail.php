@@ -17,7 +17,7 @@ class StaffPasswordResetOtpMail extends Mailable
     public function build(): self
     {
         return $this
-            ->subject('OptiCare Password Reset Code')
+            ->subject(__('auth.emails.password_reset.subject'))
             ->view('emails.auth.staff-password-reset-otp')
             ->with([
                 'otp' => $this->otp,

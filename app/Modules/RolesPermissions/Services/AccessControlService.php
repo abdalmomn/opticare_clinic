@@ -140,8 +140,8 @@ class AccessControlService
     if (! AccessControlHelper::actorCanOverridePermissions($actor)) {
         throw new HttpException(
             403,
-            'You are not allowed to override permissions.'
-        );
+            __('role_permission.errors.not_allowed_override_permissions')
+            );
     }
 
     $override = $this->staffPermissionOverrideRepository->setOverride(
@@ -177,7 +177,7 @@ public function revokePermission(Staff $actor, array $data): array
     if (! AccessControlHelper::actorCanOverridePermissions($actor)) {
         throw new HttpException(
             403,
-            'You are not allowed to override permissions.'
+            __('role_permission.errors.not_allowed_override_permissions')
         );
     }
 
@@ -214,7 +214,7 @@ public function revokePermission(Staff $actor, array $data): array
         if (! AccessControlHelper::actorCanOverridePermissions($actor)) {
             throw new HttpException(
                 403,
-                'You are not allowed to override permissions.'
+                __('role_permission.errors.not_allowed_override_permissions')
             );
         }
 
@@ -241,17 +241,17 @@ public function revokePermission(Staff $actor, array $data): array
         if (! AccessControlHelper::actorCanOverridePermissions($actor)) {
             throw new HttpException(
                 403,
-                'You are not allowed to override permissions.'
+                __('role_permission.errors.not_allowed_override_permissions')
             );
         }
 
         if ($this->staffPermissionOverrideRepository->query()->where('staff_id', $targetStaff->id)->count() === 0) {
             throw new HttpException(
                 422,
-                'The selected staff member does not have any permission overrides.'
+                __('role_permission.errors.staff_has_no_permission_overrides')
             );
         }
-        
+
         $deletedCount = $this->staffPermissionOverrideRepository
             ->query()
             ->where('staff_id', $targetStaff->id)

@@ -234,45 +234,6 @@ class RolesAndPermissionsSeeder extends Seeder
 
                 $P::VIEW_SCHEDULES,
             ],
-            RoleEnum::CLINIC_ADMIN->value => [
-                $P::VIEW_STAFF,
-                $P::CREATE_STAFF,
-                $P::EDIT_STAFF,
-                $P::TOGGLE_STAFF_STATUS,
-
-                $P::ASSIGN_ROLES,
-                $P::REVOKE_ROLES,
-                $P::OVERRIDE_PERMISSIONS,
-
-                $P::CREATE_CLINIC_ROOM,
-                $P::EDIT_CLINIC_ROOM,
-                $P::VIEW_CLINIC_ROOMS,
-
-                $P::CREATE_DEVICE,
-                $P::EDIT_DEVICE,
-                $P::DELETE_DEVICE,
-                $P::TOGGLE_DEVICE_STATUS,
-                $P::VIEW_DEVICES,
-
-                $P::MANAGE_SCHEDULES,
-                $P::VIEW_SCHEDULES,
-                $P::MANAGE_WORKING_HOURS,
-                $P::MANAGE_HOLIDAYS,
-
-                $P::EDIT_CENTER_SETTINGS,
-                $P::MANAGE_PAYMENT_UNIT,
-
-                $P::VIEW_PATIENTS,
-                $P::SEARCH_PATIENT,
-
-                $P::VIEW_APPOINTMENTS,
-
-                $P::VIEW_STATISTICS,
-                $P::VIEW_FINANCIAL_SUMMARY,
-                $P::VIEW_ACTIVITY_LOG,
-
-                $P::VIEW_IMAGING_REQUESTS,
-            ],
         ];
     }
 }

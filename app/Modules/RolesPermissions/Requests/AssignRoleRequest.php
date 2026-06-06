@@ -55,11 +55,21 @@ class AssignRoleRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'staff_id.required' => 'Staff member is required.',
-            'staff_id.exists'   => 'Selected staff member does not exist.',
-            'role.required'     => 'Role is required.',
-            'role.in'           => 'Selected role is not valid.',
-            'expires_at.after'  => 'Expiration date must be in the future.',
+            'staff_id.required' => __('role_permission.validation.staff_required'),
+            'staff_id.exists'   => __('role_permission.validation.staff_exists'),
+
+            'role.required'     => __('role_permission.validation.role_required'),
+            'role.in'           => __('role_permission.validation.role_invalid'),
+
+            'clinic_id.integer' => __('role_permission.validation.clinic_id_integer'),
+
+            'is_temporary.boolean' => __('role_permission.validation.is_temporary_boolean'),
+
+            'expires_at.date'  => __('role_permission.validation.expires_at_date'),
+            'expires_at.after' => __('role_permission.validation.expires_at_after'),
+
+            'notes.string' => __('role_permission.validation.notes_string'),
+            'notes.max'    => __('role_permission.validation.notes_max'),
         ];
     }
 }

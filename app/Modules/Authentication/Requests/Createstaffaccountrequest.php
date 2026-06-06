@@ -50,7 +50,6 @@ class CreateStaffAccountRequest extends FormRequest
                     RoleEnum::DOCTOR->value,
                     RoleEnum::SECRETARY->value,
                     RoleEnum::IMAGING_TECHNICIAN->value,
-                    RoleEnum::CLINIC_ADMIN->value,
                 ]),
             ],
 
@@ -82,12 +81,13 @@ class CreateStaffAccountRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required'     => 'Staff name is required.',
-            'email.required'    => 'Email address is required.',
-            'email.unique'      => 'A staff member with this email already exists.',
-            'role.required'     => 'Role is required.',
-            'role.in'           => 'The selected role is not valid for staff account creation.',
-            'password.min'      => 'Password must be at least 8 characters.',
+            'name.required'     => __('auth.validation.staff_name_required'),
+            'email.required'    => __('auth.validation.email_required'),
+            'email.email'       => __('auth.validation.email_valid'),
+            'email.unique'      => __('auth.validation.email_unique'),
+            'role.required'     => __('auth.validation.role_required'),
+            'role.in'           => __('auth.validation.role_invalid'),
+            'password.min'      => __('auth.validation.password_min'),
         ];
     }
 }

@@ -30,28 +30,44 @@ class AccessControlHelper
     public static function ensureRoleCanBeAssigned(Staff $actor, string $roleName): void
     {
         if (! in_array($roleName, RoleEnum::clinicStaffRoles(), true)) {
-            throw new HttpException(422, 'This role cannot be assigned inside clinic system.');
+            throw new HttpException(
+                422,
+                __('role_permission.errors.role_cannot_be_assigned_inside_clinic_system')
+            );
         }
 
         if (! self::actorCanManageRoles($actor)) {
-            throw new HttpException(403, 'You are not allowed to assign roles.');
+            throw new HttpException(
+                403,
+                __('role_permission.errors.not_allowed_assign_roles')
+            );
         }
     }
 
-    public static function ensureRoleCanBeRevoked(Staff $actor,Staff $targetStaff,string $roleName): void {
+    public static function ensureRoleCanBeRevoked(Staff $actor, Staff $targetStaff, string $roleName): void
+    {
         if (! self::actorCanManageRoles($actor)) {
-            throw new HttpException(403, 'You are not allowed to revoke roles.');
+            throw new HttpException(
+                403,
+                __('role_permission.errors.not_allowed_revoke_roles')
+            );
         }
 
         if (
             (int) $actor->id === (int) $targetStaff->id
             && in_array($roleName, RoleEnum::canAssignRoles(), true)
         ) {
-            throw new HttpException(403, 'You cannot revoke your own administrative role.');
+            throw new HttpException(
+                403,
+                __('role_permission.errors.cannot_revoke_own_admin_role')
+            );
         }
 
         if (! $targetStaff->hasRole($roleName, 'api')) {
-            throw new HttpException(422, 'The selected staff member does not have this role.');
+            throw new HttpException(
+                422,
+                __('role_permission.errors.staff_does_not_have_role')
+            );
         }
     }
 

@@ -8,10 +8,11 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Foundation\Bus\Dispatchable;
-use App\Modules\Authentication\Mail\StaffPasswordResetOtpMail;
+use App\Modules\Authentication\Mail\StaffWelcomeMail;
 
-class SendStaffPasswordResetOtpMailJob implements ShouldQueue
+class SendStaffWelcomeEmailJob implements ShouldQueue, ShouldBeEncrypted
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -20,8 +21,11 @@ class SendStaffPasswordResetOtpMailJob implements ShouldQueue
     public int $backoff = 10;
 
     public function __construct(
+        public readonly string $name,
         public readonly string $email,
-        public readonly string $otp,
+        public readonly string $temporaryPassword,
+        public readonly string $role,
+        public readonly ?int $clinicId = null,
         public readonly string $locale = 'en'
     ) {}
 
@@ -30,13 +34,19 @@ class SendStaffPasswordResetOtpMailJob implements ShouldQueue
         app()->setLocale($this->locale);
 
         Mail::to($this->email)->send(
-            (new StaffPasswordResetOtpMail($this->otp))->locale($this->locale)
+            (new StaffWelcomeMail(
+                name: $this->name,
+                email: $this->email,
+                temporaryPassword: $this->temporaryPassword,
+                role: $this->role,
+                clinicId: $this->clinicId
+            ))->locale($this->locale)
         );
     }
 
     public function failed(\Throwable $exception): void
     {
-        Log::error('[Auth] Failed to send password reset OTP email.', [
+        Log::error('[Auth] Failed to send staff welcome email.', [
             'email' => $this->email,
             'error' => $exception->getMessage(),
         ]);

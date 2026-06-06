@@ -22,10 +22,10 @@ class ResetPasswordRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'reset_token.required' => 'Reset token is required.',
-            'password.required'    => 'New password is required.',
-            'password.min'         => 'Password must be at least 8 characters.',
-            'password.confirmed'   => 'Password confirmation does not match.',
+            'reset_token.required' => __('auth.validation.reset_token_required'),
+            'password.required'    => __('auth.validation.password_required'),
+            'password.min'         => __('auth.validation.password_min'),
+            'password.confirmed'   => __('auth.validation.password_confirmed'),
         ];
     }
 }

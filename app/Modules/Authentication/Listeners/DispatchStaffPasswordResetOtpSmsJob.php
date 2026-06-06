@@ -26,7 +26,8 @@ class DispatchStaffPasswordResetOtpSmsJob
 
         SendStaffPasswordResetOtpSmsJob::dispatch(
             phone: $event->phone,
-            otp: $event->otp
+            otp: $event->otp,
+            locale: $event->locale
         );
     }
 }

@@ -14,11 +14,11 @@ namespace App\Modules\RolesPermissions\Enums;
 enum RoleEnum: string
 {
     case MEDICAL_CENTER_ADMIN = 'medical_center_admin';
-    case CLINIC_ADMIN         = 'clinic_admin';
     case DOCTOR               = 'doctor';
     case SECRETARY            = 'secretary';
     case IMAGING_TECHNICIAN   = 'imaging_technician';
 
+    // case CLINIC_ADMIN         = 'clinic_admin';
     // case VISITING_DOCTOR    = 'visiting_doctor';
     // case NURSE              = 'nurse';
     // case ACCOUNTANT         = 'accountant';
@@ -27,11 +27,10 @@ enum RoleEnum: string
     public function label(): string
     {
         return match ($this) {
-            self::MEDICAL_CENTER_ADMIN => 'Medical Center Admin',
-            self::CLINIC_ADMIN         => 'Clinic Admin',
-            self::DOCTOR               => 'Doctor',
-            self::SECRETARY            => 'Secretary',
-            self::IMAGING_TECHNICIAN   => 'Imaging Technician',
+            self::MEDICAL_CENTER_ADMIN => __('role_permission.roles.medical_center_admin'),
+            self::DOCTOR               => __('role_permission.roles.doctor'),
+            self::SECRETARY            => __('role_permission.roles.secretary'),
+            self::IMAGING_TECHNICIAN   => __('role_permission.roles.imaging_technician'),
         };
     }
 
@@ -39,7 +38,6 @@ enum RoleEnum: string
     {
         return [
             self::MEDICAL_CENTER_ADMIN->value,
-            self::CLINIC_ADMIN->value,
         ];
     }
 
@@ -47,7 +45,6 @@ enum RoleEnum: string
     {
         return [
             self::MEDICAL_CENTER_ADMIN->value,
-            self::CLINIC_ADMIN->value,
         ];
     }
 

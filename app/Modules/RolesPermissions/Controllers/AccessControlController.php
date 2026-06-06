@@ -30,7 +30,7 @@ class AccessControlController extends Controller
 
         return ApiResponse::success(
             data: $result,
-            message: 'Roles fetched successfully.'
+            message: __('role_permission.messages.roles_fetched')
         );
     }
 
@@ -40,7 +40,7 @@ class AccessControlController extends Controller
 
         return ApiResponse::success(
             data: $result,
-            message: 'Permissions fetched successfully.'
+            message: __('role_permission.messages.permissions_fetched')
         );
     }
 
@@ -55,7 +55,7 @@ class AccessControlController extends Controller
 
         return ApiResponse::success(
             data: $result,
-            message: 'Role assigned successfully.'
+            message: __('role_permission.messages.role_assigned')
         );
     }
 
@@ -70,7 +70,7 @@ class AccessControlController extends Controller
 
         return ApiResponse::success(
             data: $result,
-            message: 'Role revoked successfully.'
+            message: __('role_permission.messages.role_revoked')
         );
     }
 
@@ -85,7 +85,7 @@ class AccessControlController extends Controller
 
         return ApiResponse::success(
             data: $result,
-            message: 'Permission granted successfully.'
+            message: __('role_permission.messages.permission_granted')
         );
     }
 
@@ -100,7 +100,7 @@ class AccessControlController extends Controller
 
         return ApiResponse::success(
             data: $result,
-            message: 'Permission revoked successfully.'
+            message: __('role_permission.messages.permission_revoked')
         );
     }
 
@@ -115,8 +115,8 @@ class AccessControlController extends Controller
 
         return ApiResponse::success(
             data: $result,
-            message: 'Permission override cleared successfully.'
-        );
+            message: __('role_permission.messages.permission_override_cleared')
+            );
     }
 
     public function clearAllPermissionOverride(ClearAllPermissionOverrideRequest $request): JsonResponse
@@ -130,7 +130,7 @@ class AccessControlController extends Controller
 
         return ApiResponse::success(
             data: $result,
-            message: 'All permission overrides cleared successfully.'
-        );
+            message: __('role_permission.messages.all_permission_overrides_cleared')
+            );
     }
 }

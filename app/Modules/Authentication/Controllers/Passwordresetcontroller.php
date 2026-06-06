@@ -26,7 +26,7 @@ class PasswordResetController extends Controller
 
         return ApiResponse::success(
             data:    $result,
-            message: 'OTP code sent successfully.'
+            message: __('auth.messages.otp_sent')
         );
     }
 
@@ -39,8 +39,8 @@ class PasswordResetController extends Controller
 
         return ApiResponse::success(
             data:    $result,
-            message: 'OTP verified successfully.'
-        );
+                message: __('auth.messages.otp_verified')
+            );
     }
 
     public function reset(ResetPasswordRequest $request): JsonResponse
@@ -51,7 +51,7 @@ class PasswordResetController extends Controller
 
         return ApiResponse::success(
             data:    null,
-            message: 'Password has been reset successfully. Please login with your new password.'
+            message: __('auth.messages.password_reset')
         );
     }
 }

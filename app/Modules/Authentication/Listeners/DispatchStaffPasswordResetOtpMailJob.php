@@ -16,7 +16,8 @@ class DispatchStaffPasswordResetOtpMailJob
         }
         SendStaffPasswordResetOtpMailJob::dispatch(
             email: $event->email,
-            otp: $event->otp
+            otp: $event->otp,
+            locale: $event->locale
         );
     }
 }

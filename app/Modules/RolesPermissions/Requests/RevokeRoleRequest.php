@@ -38,10 +38,13 @@ class RevokeRoleRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'staff_id.required' => 'Staff member is required.',
-            'staff_id.exists'   => 'Selected staff member does not exist.',
-            'role.required'     => 'Role is required.',
-            'role.in'           => 'Selected role is not valid.',
+            'staff_id.required' => __('role_permission.validation.staff_required'),
+            'staff_id.exists'   => __('role_permission.validation.staff_exists'),
+
+            'role.required'     => __('role_permission.validation.role_required'),
+            'role.in'           => __('role_permission.validation.role_invalid'),
+
+            'clinic_id.integer' => __('role_permission.validation.clinic_id_integer'),
         ];
     }
 }

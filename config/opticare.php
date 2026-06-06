@@ -21,6 +21,11 @@ return [
     'clinic_id' => env('OPTICARE_CLINIC_ID', 1),
 
     'captcha_enabled' => env('OPTICARE_CAPTCHA_ENABLED', false),
-    
+
     'otp_channel' => env('OPTICARE_OTP_CHANNEL', 'email'),
+
+    'auth' => [
+    'clinic_token_ttl_minutes' => env('CLINIC_TOKEN_TTL_MINUTES', 1440),
+    'max_failed_login_attempts' => env('CLINIC_MAX_FAILED_LOGIN_ATTEMPTS', 5),
+    ],
 ];

@@ -7,6 +7,7 @@ class StaffPasswordResetOtpRequested
     public function __construct(
         public readonly string $email,
         public readonly string $otp,
-        public readonly ?string $phone = null
+        public readonly ?string $phone = null,
+        public readonly string $locale = 'en',
     ) {}
 }

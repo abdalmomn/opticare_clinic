@@ -24,7 +24,7 @@ class StaffAccountController extends Controller
 
         return ApiResponse::created(
             data:    $result,
-            message: 'Staff account created successfully.'
-        );
+            message: __('auth.messages.staff_created')
+            );
     }
 }

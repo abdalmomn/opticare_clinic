@@ -3,7 +3,7 @@
 namespace App\Modules\Core\Responses;
 
 use Illuminate\Http\JsonResponse;
-
+use App\Modules\Core\Exceptions\ApiException;
 class ApiResponse
 {
     public static function success(
@@ -122,20 +122,29 @@ class ApiResponse
     public static function handleException(\Throwable $e): \Illuminate\Http\JsonResponse
 {
     if ($e instanceof \Illuminate\Auth\AuthenticationException) {
-        return self::unauthorized('Unauthenticated. Please login first.');
+    return self::unauthorized(__('auth.errors.unauthenticated'));
     }
 
     if ($e instanceof \Illuminate\Auth\Access\AuthorizationException) {
-        return self::forbidden('You are not authorized to perform this action.');
+        return self::forbidden(__('auth.errors.forbidden'));
     }
 
     if ($e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException) {
-        return self::notFound('The requested resource was not found.');
+        return self::notFound(__('auth.errors.not_found'));
     }
 
+    if ($e instanceof ApiException) {
+        return self::error(
+            message: $e->getMessage() ?: __('auth.errors.generic_error'),
+            statusCode: $e->getStatusCode(),
+            code: $e->getErrorCode(),
+            errors: $e->getErrors()
+        );
+    }
+    
     if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpException) {
         return self::error(
-            message:    $e->getMessage() ?: 'An error occurred.',
+            message: $e->getMessage() ?: __('auth.errors.generic_error'),
             statusCode: $e->getStatusCode(),
         );
     }
@@ -143,12 +152,12 @@ class ApiResponse
     if ($e instanceof \Illuminate\Validation\ValidationException) {
         return self::validationError(
             errors:  $e->errors(),
-            message: 'Validation failed.'
+            message: __('auth.validation.failed')
         );
     }
 
     $message = app()->environment('production')
-        ? 'Internal server error.'
+        ? __('auth.errors.server_error')
         : $e->getMessage();
 
     return self::serverError($message);

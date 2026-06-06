@@ -37,6 +37,9 @@ class Staff extends Authenticatable
         'email_verified_at',
         'last_login_at',
         'password_changed_at',
+        'failed_login_attempts',
+        'password_reset_required',
+        'password_reset_required_at',
     ];
 
     protected $hidden = [
@@ -50,6 +53,9 @@ class Staff extends Authenticatable
         'email_verified_at'  => 'datetime',
         'last_login_at'      => 'datetime',
         'password_changed_at'=> 'datetime',
+        'failed_login_attempts'      => 'integer',
+        'password_reset_required'    => 'boolean',
+        'password_reset_required_at' => 'datetime',
     ];
 
     // ─── Auth Helpers ─────────────────────────────────────────
