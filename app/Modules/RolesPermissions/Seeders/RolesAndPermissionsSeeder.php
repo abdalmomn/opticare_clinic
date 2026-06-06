@@ -92,6 +92,10 @@ class RolesAndPermissionsSeeder extends Seeder
                 $P::VIEW_PATIENTS,
                 $P::SEARCH_PATIENT,
 
+                $P::ARCHIVE_PATIENT,
+                $P::RESTORE_PATIENT,
+                $P::VIEW_ARCHIVED_PATIENTS,
+
                 $P::VIEW_APPOINTMENTS,
 
                 $P::VIEW_STATISTICS,
@@ -107,6 +111,9 @@ class RolesAndPermissionsSeeder extends Seeder
                 $P::SEARCH_PATIENT,
                 $P::CREATE_PATIENT,
                 $P::EDIT_PATIENT,
+                $P::ARCHIVE_PATIENT,
+                $P::RESTORE_PATIENT,
+                $P::VIEW_ARCHIVED_PATIENTS,
 
                 $P::VIEW_APPOINTMENTS,
                 $P::BOOK_FOLLOW_UP,
@@ -171,6 +178,9 @@ class RolesAndPermissionsSeeder extends Seeder
                 $P::CREATE_PATIENT,
                 $P::EDIT_PATIENT,
                 $P::SEARCH_PATIENT,
+                $P::ARCHIVE_PATIENT,
+                $P::RESTORE_PATIENT,
+                $P::VIEW_ARCHIVED_PATIENTS,
 
                 $P::VIEW_APPOINTMENTS,
                 $P::CREATE_APPOINTMENT,

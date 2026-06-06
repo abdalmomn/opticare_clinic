@@ -43,6 +43,9 @@ class PermissionList
     const CREATE_PATIENT          = 'create patient';
     const EDIT_PATIENT            = 'edit patient';
     const SEARCH_PATIENT          = 'search patient';
+    const ARCHIVE_PATIENT        = 'archive patient';
+    const RESTORE_PATIENT        = 'restore patient';
+    const VIEW_ARCHIVED_PATIENTS = 'view archived patients';
 
     const VIEW_APPOINTMENTS       = 'view appointments';
     const CREATE_APPOINTMENT      = 'create appointment';
