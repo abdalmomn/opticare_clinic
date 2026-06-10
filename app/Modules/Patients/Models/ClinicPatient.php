@@ -8,6 +8,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Modules\MedicalRecords\Models\VisitRecord;
+use App\Modules\MedicalRecords\Models\EyeMeasurement;
+use App\Modules\MedicalRecords\Models\MedicalReport;
+use App\Modules\MedicalRecords\Models\Prescription;
+use App\Modules\MedicalRecords\Models\DoctorPrivateNote;
 
 class ClinicPatient extends Model
 {
@@ -17,7 +22,7 @@ class ClinicPatient extends Model
 
     protected $fillable = [
         'central_user_id',
-        'file_number',
+        'medical_file_number',
         'first_name',
         'father_name',
         'last_name',
@@ -76,5 +81,30 @@ class ClinicPatient extends Model
     public function archivedBy(): BelongsTo
     {
         return $this->belongsTo(Staff::class, 'archived_by');
+    }
+
+    public function visitRecords(): HasMany
+    {
+        return $this->hasMany(VisitRecord::class, 'patient_id');
+    }
+
+    public function eyeMeasurements(): HasMany
+    {
+        return $this->hasMany(EyeMeasurement::class, 'patient_id');
+    }
+
+    public function medicalReports(): HasMany
+    {
+        return $this->hasMany(MedicalReport::class, 'patient_id');
+    }
+
+    public function prescriptions(): HasMany
+    {
+        return $this->hasMany(Prescription::class, 'patient_id');
+    }
+
+    public function doctorPrivateNotes(): HasMany
+    {
+        return $this->hasMany(DoctorPrivateNote::class, 'patient_id');
     }
 }

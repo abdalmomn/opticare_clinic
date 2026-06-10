@@ -2,30 +2,73 @@
 
 namespace App\Modules\MedicalRecords\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Modules\Appointments\Models\Appointment;
 use App\Modules\Authentication\Models\Staff;
-use App\Modules\Imaging\Models\ImagingRequest;
-use App\Modules\Payments\Models\Invoice;
+use App\Modules\Patients\Models\ClinicPatient;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class VisitRecord extends Model
 {
-    public $timestamps = false;
-
     protected $table = 'visit_records';
 
+    public const STATUS_DRAFT = 'draft';
+    public const STATUS_FINALIZED = 'finalized';
+    public const STATUS_CANCELLED = 'cancelled';
+
+    public const TYPE_CONSULTATION = 'consultation';
+    public const TYPE_FOLLOW_UP = 'follow_up';
+    public const TYPE_EMERGENCY = 'emergency';
+    public const TYPE_POST_OP = 'post_op';
+
     protected $fillable = [
-        'appointment_id', 'doctor_id', 'visit_date',
-        'symptoms', 'diagnosis', 'notes',
+        'patient_id',
+        'appointment_id',
+        'doctor_id',
+        'status',
+        'visit_type',
+        'visit_at',
+        'chief_complaint',
+        'symptoms',
+        'examination_notes',
+        'diagnosis',
+        'treatment_plan',
+        'notes',
+        'finalized_at',
+        'created_by',
+        'updated_by',
     ];
 
     protected $casts = [
-        'visit_date' => 'datetime',
-        'created_at' => 'datetime',
+        'visit_at' => 'datetime',
+        'finalized_at' => 'datetime',
     ];
+
+    public static function statuses(): array
+    {
+        return [
+            self::STATUS_DRAFT,
+            self::STATUS_FINALIZED,
+            self::STATUS_CANCELLED,
+        ];
+    }
+
+    public static function types(): array
+    {
+        return [
+            self::TYPE_CONSULTATION,
+            self::TYPE_FOLLOW_UP,
+            self::TYPE_EMERGENCY,
+            self::TYPE_POST_OP,
+        ];
+    }
+
+    public function patient(): BelongsTo
+    {
+        return $this->belongsTo(ClinicPatient::class, 'patient_id');
+    }
 
     public function appointment(): BelongsTo
     {
@@ -37,28 +80,58 @@ class VisitRecord extends Model
         return $this->belongsTo(Staff::class, 'doctor_id');
     }
 
-    public function vitalSigns(): HasOne
+    public function createdBy(): BelongsTo
     {
-        return $this->hasOne(VitalSign::class, 'visit_record_id');
+        return $this->belongsTo(Staff::class, 'created_by');
+    }
+
+    public function updatedBy(): BelongsTo
+    {
+        return $this->belongsTo(Staff::class, 'updated_by');
+    }
+
+    public function eyeMeasurements(): HasMany
+    {
+        return $this->hasMany(EyeMeasurement::class, 'visit_record_id');
+    }
+
+    public function latestEyeMeasurement(): HasOne
+    {
+        return $this->hasOne(EyeMeasurement::class, 'visit_record_id')->latestOfMany('measured_at');
+    }
+
+    public function medicalReports(): HasMany
+    {
+        return $this->hasMany(MedicalReport::class, 'visit_record_id');
+    }
+
+    public function latestMedicalReport(): HasOne
+    {
+        return $this->hasOne(MedicalReport::class, 'visit_record_id')->latestOfMany();
     }
 
     public function prescriptions(): HasMany
     {
-        return $this->hasMany(Prescription::class, 'visit_id');
+        return $this->hasMany(Prescription::class, 'visit_record_id');
     }
 
-    public function imagingRequests(): HasMany
+    public function latestPrescription(): HasOne
     {
-        return $this->hasMany(ImagingRequest::class, 'visit_record_id');
+        return $this->hasOne(Prescription::class, 'visit_record_id')->latestOfMany();
     }
 
-    public function invoices(): HasMany
+    public function diagnosisCodeLinks(): HasMany
     {
-        return $this->hasMany(Invoice::class, 'visit_record_id');
+        return $this->hasMany(VisitDiagnosisCode::class, 'visit_record_id');
     }
 
     public function privateNotes(): HasMany
     {
         return $this->hasMany(DoctorPrivateNote::class, 'visit_record_id');
+    }
+
+    public function isFinalized(): bool
+    {
+        return $this->status === self::STATUS_FINALIZED;
     }
 }

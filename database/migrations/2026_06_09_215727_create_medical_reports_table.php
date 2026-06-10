@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('prescriptions', function (Blueprint $table) {
+        Schema::create('medical_reports', function (Blueprint $table) {
             $table->id();
 
             $table->foreignId('patient_id')
@@ -25,14 +25,13 @@ return new class extends Migration
                 ->constrained('staff')
                 ->nullOnDelete();
 
-            $table->longText('prescription_text')->nullable();
+            $table->string('title')->nullable();
+            $table->longText('report_text')->nullable();
 
             $table->enum('status', ['draft', 'finalized'])
                 ->default('draft');
 
             $table->timestamp('finalized_at')->nullable();
-
-            $table->text('notes')->nullable();
 
             $table->foreignId('created_by')
                 ->nullable()
@@ -46,16 +45,16 @@ return new class extends Migration
 
             $table->timestamps();
 
-            $table->index('patient_id', 'idx_prescriptions_patient_id');
-            $table->index('visit_record_id', 'idx_prescriptions_visit_record');
-            $table->index('doctor_id', 'idx_prescriptions_doctor');
-            $table->index('status', 'idx_prescriptions_status');
-            $table->index('finalized_at', 'idx_prescriptions_finalized_at');
+            $table->index('patient_id', 'idx_medical_reports_patient_id');
+            $table->index('visit_record_id', 'idx_medical_reports_visit_record');
+            $table->index('doctor_id', 'idx_medical_reports_doctor');
+            $table->index('status', 'idx_medical_reports_status');
+            $table->index('finalized_at', 'idx_medical_reports_finalized_at');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('prescriptions');
+        Schema::dropIfExists('medical_reports');
     }
 };

@@ -4,8 +4,7 @@ namespace App\Modules\Appointments\Repositories;
 
 use App\Modules\Core\Repositories\BaseRepository;
 use App\Modules\Appointments\Models\Appointment;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-
+use Illuminate\Pagination\LengthAwarePaginator;
 class AppointmentRepository extends BaseRepository
 {
     public function __construct(Appointment $model)

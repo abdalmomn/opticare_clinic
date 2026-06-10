@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('prescriptions', function (Blueprint $table) {
+        Schema::create('eye_measurements', function (Blueprint $table) {
             $table->id();
 
             $table->foreignId('patient_id')
@@ -20,19 +20,25 @@ return new class extends Migration
                 ->constrained('visit_records')
                 ->nullOnDelete();
 
+            $table->foreignId('appointment_id')
+                ->nullable()
+                ->constrained('appointments')
+                ->nullOnDelete();
+
             $table->foreignId('doctor_id')
                 ->nullable()
                 ->constrained('staff')
                 ->nullOnDelete();
 
-            $table->longText('prescription_text')->nullable();
+            $table->string('visual_acuity_od', 50)->nullable();
+            $table->string('visual_acuity_os', 50)->nullable();
 
-            $table->enum('status', ['draft', 'finalized'])
-                ->default('draft');
-
-            $table->timestamp('finalized_at')->nullable();
+            $table->decimal('iop_od', 5, 2)->nullable();
+            $table->decimal('iop_os', 5, 2)->nullable();
 
             $table->text('notes')->nullable();
+
+            $table->timestamp('measured_at')->nullable();
 
             $table->foreignId('created_by')
                 ->nullable()
@@ -46,16 +52,16 @@ return new class extends Migration
 
             $table->timestamps();
 
-            $table->index('patient_id', 'idx_prescriptions_patient_id');
-            $table->index('visit_record_id', 'idx_prescriptions_visit_record');
-            $table->index('doctor_id', 'idx_prescriptions_doctor');
-            $table->index('status', 'idx_prescriptions_status');
-            $table->index('finalized_at', 'idx_prescriptions_finalized_at');
+            $table->index('patient_id', 'idx_eye_measurements_patient_id');
+            $table->index('visit_record_id', 'idx_eye_measurements_visit_record');
+            $table->index('appointment_id', 'idx_eye_measurements_appointment');
+            $table->index('doctor_id', 'idx_eye_measurements_doctor');
+            $table->index('measured_at', 'idx_eye_measurements_measured_at');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('prescriptions');
+        Schema::dropIfExists('eye_measurements');
     }
 };

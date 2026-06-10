@@ -3,35 +3,43 @@
 namespace App\Modules\MedicalRecords\Models;
 
 use App\Modules\Authentication\Models\Staff;
+use App\Modules\Imaging\Models\ImagingFile;
 use App\Modules\Patients\Models\ClinicPatient;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class MedicalRecord extends Model
+class ImagingFileNote extends Model
 {
-    protected $table = 'medical_records';
+    protected $table = 'imaging_file_notes';
 
     protected $fillable = [
+        'imaging_file_id',
         'patient_id',
-        'summary',
-        'last_visit_id',
-        'last_visit_at',
+        'doctor_id',
+        'visit_record_id',
+        'note',
         'created_by',
         'updated_by',
     ];
 
-    protected $casts = [
-        'last_visit_at' => 'datetime',
-    ];
+    public function imagingFile(): BelongsTo
+    {
+        return $this->belongsTo(ImagingFile::class, 'imaging_file_id');
+    }
 
     public function patient(): BelongsTo
     {
         return $this->belongsTo(ClinicPatient::class, 'patient_id');
     }
 
-    public function lastVisit(): BelongsTo
+    public function doctor(): BelongsTo
     {
-        return $this->belongsTo(VisitRecord::class, 'last_visit_id');
+        return $this->belongsTo(Staff::class, 'doctor_id');
+    }
+
+    public function visitRecord(): BelongsTo
+    {
+        return $this->belongsTo(VisitRecord::class, 'visit_record_id');
     }
 
     public function createdBy(): BelongsTo

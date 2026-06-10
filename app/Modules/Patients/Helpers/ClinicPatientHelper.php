@@ -2,8 +2,7 @@
 
 namespace App\Modules\Patients\Helpers;
 
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-
+use Illuminate\Pagination\LengthAwarePaginator;
 class ClinicPatientHelper
 {
     public static function buildFullName(

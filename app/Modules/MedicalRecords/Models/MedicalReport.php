@@ -8,9 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Prescription extends Model
+class MedicalReport extends Model
 {
-    protected $table = 'prescriptions';
+    protected $table = 'medical_reports';
 
     public const STATUS_DRAFT = 'draft';
     public const STATUS_FINALIZED = 'finalized';
@@ -19,10 +19,10 @@ class Prescription extends Model
         'patient_id',
         'visit_record_id',
         'doctor_id',
-        'prescription_text',
+        'title',
+        'report_text',
         'status',
         'finalized_at',
-        'notes',
         'created_by',
         'updated_by',
     ];
@@ -49,14 +49,14 @@ class Prescription extends Model
         return $this->belongsTo(VisitRecord::class, 'visit_record_id');
     }
 
-    public function items(): HasMany
-    {
-        return $this->hasMany(PrescriptionItem::class, 'prescription_id');
-    }
-
     public function doctor(): BelongsTo
     {
         return $this->belongsTo(Staff::class, 'doctor_id');
+    }
+
+    public function images(): HasMany
+    {
+        return $this->hasMany(MedicalReportImage::class, 'medical_report_id');
     }
 
     public function createdBy(): BelongsTo

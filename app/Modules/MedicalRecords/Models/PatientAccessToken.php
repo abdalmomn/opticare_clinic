@@ -4,7 +4,7 @@ namespace App\Modules\MedicalRecords\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Modules\Clinic\Models\ClinicPatient;
+use App\Modules\Patients\Models\ClinicPatient;
 
 class PatientAccessToken extends Model
 {

@@ -4,8 +4,7 @@ namespace App\Modules\Patients\Repositories;
 
 use App\Modules\Core\Repositories\BaseRepository;
 use App\Modules\Patients\Models\ClinicPatient;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-
+use Illuminate\Pagination\LengthAwarePaginator;
 class ClinicPatientRepository extends BaseRepository
 {
     public function __construct(ClinicPatient $model)
@@ -82,7 +81,7 @@ class ClinicPatientRepository extends BaseRepository
         if (! $includeArchived && empty($filters['status'])) {
             $query->whereNotIn('status', ['archived', 'deceased']);
         }
-        
+
         return $query
             ->orderByDesc('created_at')
             ->paginate($perPage);

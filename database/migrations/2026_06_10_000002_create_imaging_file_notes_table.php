@@ -8,31 +8,28 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('prescriptions', function (Blueprint $table) {
+        Schema::create('imaging_file_notes', function (Blueprint $table) {
             $table->id();
+
+            $table->foreignId('imaging_file_id')
+                ->constrained('imaging_files')
+                ->cascadeOnDelete();
 
             $table->foreignId('patient_id')
                 ->constrained('clinic_patients')
                 ->cascadeOnDelete();
-
-            $table->foreignId('visit_record_id')
-                ->nullable()
-                ->constrained('visit_records')
-                ->nullOnDelete();
 
             $table->foreignId('doctor_id')
                 ->nullable()
                 ->constrained('staff')
                 ->nullOnDelete();
 
-            $table->longText('prescription_text')->nullable();
+            $table->foreignId('visit_record_id')
+                ->nullable()
+                ->constrained('visit_records')
+                ->nullOnDelete();
 
-            $table->enum('status', ['draft', 'finalized'])
-                ->default('draft');
-
-            $table->timestamp('finalized_at')->nullable();
-
-            $table->text('notes')->nullable();
+            $table->text('note')->nullable();
 
             $table->foreignId('created_by')
                 ->nullable()
@@ -46,16 +43,17 @@ return new class extends Migration
 
             $table->timestamps();
 
-            $table->index('patient_id', 'idx_prescriptions_patient_id');
-            $table->index('visit_record_id', 'idx_prescriptions_visit_record');
-            $table->index('doctor_id', 'idx_prescriptions_doctor');
-            $table->index('status', 'idx_prescriptions_status');
-            $table->index('finalized_at', 'idx_prescriptions_finalized_at');
+            $table->index('imaging_file_id', 'idx_imaging_file_notes_file');
+            $table->index('patient_id', 'idx_imaging_file_notes_patient');
+            $table->index('doctor_id', 'idx_imaging_file_notes_doctor');
+            $table->index('visit_record_id', 'idx_imaging_file_notes_visit');
+
+            $table->unique(['imaging_file_id', 'doctor_id'], 'uniq_imaging_file_note_doctor');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('prescriptions');
+        Schema::dropIfExists('imaging_file_notes');
     }
 };

@@ -2,42 +2,36 @@
 
 namespace App\Modules\MedicalRecords\Models;
 
+use App\Modules\Appointments\Models\Appointment;
 use App\Modules\Authentication\Models\Staff;
 use App\Modules\Patients\Models\ClinicPatient;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Prescription extends Model
+class EyeMeasurement extends Model
 {
-    protected $table = 'prescriptions';
-
-    public const STATUS_DRAFT = 'draft';
-    public const STATUS_FINALIZED = 'finalized';
+    protected $table = 'eye_measurements';
 
     protected $fillable = [
         'patient_id',
         'visit_record_id',
+        'appointment_id',
         'doctor_id',
-        'prescription_text',
-        'status',
-        'finalized_at',
+        'visual_acuity_od',
+        'visual_acuity_os',
+        'iop_od',
+        'iop_os',
         'notes',
+        'measured_at',
         'created_by',
         'updated_by',
     ];
 
     protected $casts = [
-        'finalized_at' => 'datetime',
+        'iop_od' => 'decimal:2',
+        'iop_os' => 'decimal:2',
+        'measured_at' => 'datetime',
     ];
-
-    public static function statuses(): array
-    {
-        return [
-            self::STATUS_DRAFT,
-            self::STATUS_FINALIZED,
-        ];
-    }
 
     public function patient(): BelongsTo
     {
@@ -49,9 +43,9 @@ class Prescription extends Model
         return $this->belongsTo(VisitRecord::class, 'visit_record_id');
     }
 
-    public function items(): HasMany
+    public function appointment(): BelongsTo
     {
-        return $this->hasMany(PrescriptionItem::class, 'prescription_id');
+        return $this->belongsTo(Appointment::class, 'appointment_id');
     }
 
     public function doctor(): BelongsTo
@@ -67,10 +61,5 @@ class Prescription extends Model
     public function updatedBy(): BelongsTo
     {
         return $this->belongsTo(Staff::class, 'updated_by');
-    }
-
-    public function isFinalized(): bool
-    {
-        return $this->status === self::STATUS_FINALIZED;
     }
 }

@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use App\Modules\Patients\Models\ClinicPatient;
 use App\Modules\Authentication\Models\Staff;
 use App\Modules\MedicalRecords\Models\VisitRecord;
+use App\Modules\MedicalRecords\Models\EyeMeasurement;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Appointment extends Model
 {
@@ -102,6 +104,11 @@ class Appointment extends Model
     public function visitRecord(): HasOne
     {
         return $this->hasOne(VisitRecord::class, 'appointment_id');
+    }
+
+    public function eyeMeasurements(): HasMany
+    {
+        return $this->hasMany(EyeMeasurement::class, 'appointment_id');
     }
 
     // ─── Status Constants ────────────────────────────────────

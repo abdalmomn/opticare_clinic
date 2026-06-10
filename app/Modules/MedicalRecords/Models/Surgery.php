@@ -5,7 +5,7 @@ namespace App\Modules\MedicalRecords\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use App\Modules\Clinic\Models\ClinicPatient;
+use App\Modules\Patients\Models\ClinicPatient;
 use App\Modules\Authentication\Models\Staff;
 
 class Surgery extends Model
