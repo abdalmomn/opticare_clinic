@@ -2,23 +2,25 @@
 
 namespace App\Modules\Authentication\Models;
 
+use App\Modules\Chat\Models\Conversation;
+use App\Modules\Clinic\Models\ClinicDevice;
+use App\Modules\Imaging\Models\ImagingFile;
+use App\Modules\Imaging\Models\ImagingRequest;
+use App\Modules\MedicalRecords\Models\DoctorPrivateNote;
+use App\Modules\MedicalRecords\Models\Prescription;
+use App\Modules\MedicalRecords\Models\SharedMedicalFile;
+use App\Modules\MedicalRecords\Models\Surgery;
+use App\Modules\MedicalRecords\Models\VisitRecord;
+use App\Modules\MedicalRecords\Models\VitalSign;
+use App\Modules\Payments\Models\Invoice;
+use App\Modules\Payments\Models\Payment;
+use App\Modules\RolesPermissions\Models\StaffClinicRole;
+use App\Modules\Scheduling\Models\Schedule;
+use App\Modules\Scheduling\Models\ScheduleException;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Modules\MedicalRecords\Models\VisitRecord;
-use App\Modules\MedicalRecords\Models\VitalSign;
-use App\Modules\MedicalRecords\Models\Prescription;
-use App\Modules\MedicalRecords\Models\Surgery;
-use App\Modules\MedicalRecords\Models\SharedMedicalFile;
-use App\Modules\MedicalRecords\Models\DoctorPrivateNote;
-use App\Modules\Imaging\Models\ImagingRequest;
-use App\Modules\Imaging\Models\ImagingFile;
-use App\Modules\Payments\Models\Invoice;
-use App\Modules\Payments\Models\Payment;
-use App\Modules\Chat\Models\Conversation;
-use App\Modules\Clinic\Models\ClinicDevice;
-use App\Modules\RolesPermissions\Models\StaffClinicRole;
 
 class Staff extends Authenticatable
 {
@@ -48,13 +50,13 @@ class Staff extends Authenticatable
     ];
 
     protected $casts = [
-        'password'           => 'hashed',
-        'is_active'          => 'boolean',
-        'email_verified_at'  => 'datetime',
-        'last_login_at'      => 'datetime',
-        'password_changed_at'=> 'datetime',
-        'failed_login_attempts'      => 'integer',
-        'password_reset_required'    => 'boolean',
+        'password' => 'hashed',
+        'is_active' => 'boolean',
+        'email_verified_at' => 'datetime',
+        'last_login_at' => 'datetime',
+        'password_changed_at' => 'datetime',
+        'failed_login_attempts' => 'integer',
+        'password_reset_required' => 'boolean',
         'password_reset_required_at' => 'datetime',
     ];
 
@@ -114,7 +116,22 @@ class Staff extends Authenticatable
         return $this->hasMany(ImagingRequest::class, 'requested_by');
     }
 
+    public function requestedImagingRequests(): HasMany
+    {
+        return $this->hasMany(ImagingRequest::class, 'requested_by');
+    }
+
+    public function technicianImagingRequests(): HasMany
+    {
+        return $this->hasMany(ImagingRequest::class, 'technician_id');
+    }
+
     public function imagingFiles(): HasMany
+    {
+        return $this->hasMany(ImagingFile::class, 'uploaded_by');
+    }
+
+    public function uploadedImagingFiles(): HasMany
     {
         return $this->hasMany(ImagingFile::class, 'uploaded_by');
     }
@@ -141,12 +158,12 @@ class Staff extends Authenticatable
 
     public function schedules()
     {
-        return $this->morphMany(\App\Modules\Scheduling\Models\Schedule::class, 'schedulable');
+        return $this->morphMany(Schedule::class, 'schedulable');
     }
 
     public function scheduleExceptions()
     {
-        return $this->morphMany(\App\Modules\Scheduling\Models\ScheduleException::class, 'schedulable');
+        return $this->morphMany(ScheduleException::class, 'schedulable');
     }
 
     public function clinicRoles(): HasMany

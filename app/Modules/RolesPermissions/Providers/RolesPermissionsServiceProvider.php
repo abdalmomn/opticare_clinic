@@ -2,23 +2,22 @@
 
 namespace App\Modules\RolesPermissions\Providers;
 
+use App\Modules\Appointments\Models\Appointment;
+use App\Modules\Authentication\Models\Staff;
+use App\Modules\Imaging\Models\ImagingFile;
+use App\Modules\Imaging\Models\ImagingRequest;
+use App\Modules\MedicalRecords\Models\DoctorPrivateNote;
+use App\Modules\MedicalRecords\Models\MedicalRecord;
+use App\Modules\RolesPermissions\Enums\RoleEnum;
+use App\Modules\RolesPermissions\Helpers\AccessControlHelper;
+use App\Modules\RolesPermissions\Policies\AppointmentPolicy;
+use App\Modules\RolesPermissions\Policies\ImagingPolicy;
+use App\Modules\RolesPermissions\Policies\MedicalRecordPolicy;
+use App\Modules\RolesPermissions\Policies\StaffPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
-use App\Modules\Authentication\Models\Staff;
-use App\Modules\Appointments\Models\Appointment;
-use App\Modules\MedicalRecords\Models\MedicalRecord;
-use App\Modules\MedicalRecords\Models\DoctorPrivateNote;
-use App\Modules\Imaging\Models\ImagingRequest;
-
-use App\Modules\RolesPermissions\Enums\RoleEnum;
-
-use App\Modules\RolesPermissions\Policies\AppointmentPolicy;
-use App\Modules\RolesPermissions\Policies\MedicalRecordPolicy;
-use App\Modules\RolesPermissions\Policies\ImagingPolicy;
-use App\Modules\RolesPermissions\Policies\StaffPolicy;
-use App\Modules\RolesPermissions\Helpers\AccessControlHelper;
 class RolesPermissionsServiceProvider extends ServiceProvider
 {
     public function register(): void
@@ -39,6 +38,7 @@ class RolesPermissionsServiceProvider extends ServiceProvider
         Gate::policy(MedicalRecord::class, MedicalRecordPolicy::class);
         Gate::policy(DoctorPrivateNote::class, MedicalRecordPolicy::class);
         Gate::policy(ImagingRequest::class, ImagingPolicy::class);
+        Gate::policy(ImagingFile::class, ImagingPolicy::class);
         Gate::policy(Staff::class, StaffPolicy::class);
     }
 
@@ -54,7 +54,7 @@ class RolesPermissionsServiceProvider extends ServiceProvider
 
         Gate::define('view-patient-in-center', function (Staff $staff, int $patientId, bool $isCenter = false): bool {
             // if it's not center-level access, any staff can view the patient, because they are in the same clinic and have access to the same patients
-            if (!$isCenter) {
+            if (! $isCenter) {
                 return true;
             }
             // if user is secretary, he can view all patients in his clinic

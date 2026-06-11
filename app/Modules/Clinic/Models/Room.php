@@ -54,6 +54,16 @@ class Room extends Model
         return $this->hasMany(ImagingQueue::class, 'room_id');
     }
 
+    public function imagingQueues(): HasMany
+    {
+        return $this->hasMany(ImagingQueue::class, 'room_id');
+    }
+
+    public function clinicDevices(): HasMany
+    {
+        return $this->hasMany(ClinicDevice::class, 'room_id');
+    }
+
     public function schedules()
     {
         return $this->morphMany(Schedule::class, 'schedulable');

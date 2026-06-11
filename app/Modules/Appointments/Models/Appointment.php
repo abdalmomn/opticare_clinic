@@ -2,14 +2,16 @@
 
 namespace App\Modules\Appointments\Models;
 
+use App\Modules\Authentication\Models\Staff;
+use App\Modules\Imaging\Models\ImagingFile;
+use App\Modules\Imaging\Models\ImagingRequest;
+use App\Modules\MedicalRecords\Models\EyeMeasurement;
+use App\Modules\MedicalRecords\Models\VisitRecord;
+use App\Modules\Patients\Models\ClinicPatient;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
-use App\Modules\Patients\Models\ClinicPatient;
-use App\Modules\Authentication\Models\Staff;
-use App\Modules\MedicalRecords\Models\VisitRecord;
-use App\Modules\MedicalRecords\Models\EyeMeasurement;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Appointment extends Model
 {
@@ -111,14 +113,30 @@ class Appointment extends Model
         return $this->hasMany(EyeMeasurement::class, 'appointment_id');
     }
 
+    public function imagingRequests(): HasMany
+    {
+        return $this->hasMany(ImagingRequest::class, 'appointment_id');
+    }
+
+    public function imagingFiles(): HasMany
+    {
+        return $this->hasMany(ImagingFile::class, 'appointment_id');
+    }
+
     // ─── Status Constants ────────────────────────────────────
 
     public const STATUS_BOOKED = 'booked';
+
     public const STATUS_CONFIRMED = 'confirmed';
+
     public const STATUS_WAITING = 'waiting';
+
     public const STATUS_IN_PROGRESS = 'in_progress';
+
     public const STATUS_COMPLETED = 'completed';
+
     public const STATUS_CANCELLED = 'cancelled';
+
     public const STATUS_NO_SHOW = 'no_show';
 
     public static function statuses(): array
@@ -137,9 +155,13 @@ class Appointment extends Model
     // ─── Type Constants ──────────────────────────────────────
 
     public const TYPE_CONSULTATION = 'consultation';
+
     public const TYPE_FOLLOW_UP = 'follow_up';
+
     public const TYPE_IMAGING = 'imaging';
+
     public const TYPE_CONSULTATION_AND_IMAGING = 'consultation_and_imaging';
+
     public const TYPE_SURGERY_PREPARATION = 'surgery_preparation';
 
     public static function types(): array

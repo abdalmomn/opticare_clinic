@@ -10,12 +10,39 @@ return new class extends Migration
     {
         Schema::create('imaging_queue', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('imaging_request_id')->constrained('imaging_requests')->cascadeOnDelete();
-            $table->foreignId('room_id')->constrained('rooms')->cascadeOnDelete();
-            $table->integer('queue_number');
-            $table->string('status')->default('waiting'); // waiting - called - completed - skipped
+
+            $table->foreignId('imaging_request_id')
+                ->constrained('imaging_requests')
+                ->cascadeOnDelete();
+
+            $table->foreignId('room_id')
+                ->nullable()
+                ->constrained('rooms')
+                ->nullOnDelete();
+
+            $table->foreignId('technician_id')
+                ->nullable()
+                ->constrained('staff')
+                ->nullOnDelete();
+
+            $table->integer('queue_number')->nullable();
+
+            $table->string('status')->default('waiting');
+
             $table->dateTime('called_at')->nullable();
-            $table->timestamp('created_at')->nullable();
+
+            $table->timestamp('dispatched_at')->nullable();
+            $table->timestamp('started_at')->nullable();
+            $table->timestamp('completed_at')->nullable();
+
+            $table->timestamps();
+
+            $table->unique('imaging_request_id', 'uniq_imaging_queue_request');
+
+            $table->index('room_id');
+            $table->index('technician_id');
+            $table->index('status');
+            $table->index('queue_number');
         });
     }
 

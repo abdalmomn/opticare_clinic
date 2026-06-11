@@ -4,6 +4,8 @@ namespace App\Modules\MedicalRecords\Models;
 
 use App\Modules\Appointments\Models\Appointment;
 use App\Modules\Authentication\Models\Staff;
+use App\Modules\Imaging\Models\ImagingFile;
+use App\Modules\Imaging\Models\ImagingRequest;
 use App\Modules\Patients\Models\ClinicPatient;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,12 +17,17 @@ class VisitRecord extends Model
     protected $table = 'visit_records';
 
     public const STATUS_DRAFT = 'draft';
+
     public const STATUS_FINALIZED = 'finalized';
+
     public const STATUS_CANCELLED = 'cancelled';
 
     public const TYPE_CONSULTATION = 'consultation';
+
     public const TYPE_FOLLOW_UP = 'follow_up';
+
     public const TYPE_EMERGENCY = 'emergency';
+
     public const TYPE_POST_OP = 'post_op';
 
     protected $fillable = [
@@ -128,6 +135,16 @@ class VisitRecord extends Model
     public function privateNotes(): HasMany
     {
         return $this->hasMany(DoctorPrivateNote::class, 'visit_record_id');
+    }
+
+    public function imagingRequests(): HasMany
+    {
+        return $this->hasMany(ImagingRequest::class, 'visit_record_id');
+    }
+
+    public function imagingFiles(): HasMany
+    {
+        return $this->hasMany(ImagingFile::class, 'visit_record_id');
     }
 
     public function isFinalized(): bool

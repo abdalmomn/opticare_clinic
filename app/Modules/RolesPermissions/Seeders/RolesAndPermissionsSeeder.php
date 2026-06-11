@@ -2,12 +2,12 @@
 
 namespace App\Modules\RolesPermissions\Seeders;
 
-use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\PermissionRegistrar;
 use App\Modules\RolesPermissions\Constants\PermissionList;
 use App\Modules\RolesPermissions\Enums\RoleEnum;
+use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class RolesAndPermissionsSeeder extends Seeder
 {
@@ -26,24 +26,24 @@ class RolesAndPermissionsSeeder extends Seeder
     {
         foreach (PermissionList::all() as $permission) {
             Permission::firstOrCreate([
-                'name'       => $permission,
+                'name' => $permission,
                 'guard_name' => 'api',
             ]);
         }
 
-        $this->command->info('permissions created: ' . count(PermissionList::all()));
+        $this->command->info('permissions created: '.count(PermissionList::all()));
     }
 
     private function createRoles(): void
     {
         foreach (RoleEnum::cases() as $role) {
             Role::firstOrCreate([
-                'name'       => $role->value,
+                'name' => $role->value,
                 'guard_name' => 'api',
             ]);
         }
 
-        $this->command->info('roles created: ' . count(RoleEnum::cases()));
+        $this->command->info('roles created: '.count(RoleEnum::cases()));
     }
 
     private function assignPermissionsToRoles(): void
@@ -51,7 +51,7 @@ class RolesAndPermissionsSeeder extends Seeder
         foreach ($this->buildRolePermissionMap() as $roleName => $permissions) {
             $role = Role::findByName($roleName, 'api');
             $role->syncPermissions($permissions);
-            $this->command->info("  ➜ Permissions assigned to [{$roleName}]: " . count($permissions));
+            $this->command->info("  ➜ Permissions assigned to [{$roleName}]: ".count($permissions));
         }
     }
 
@@ -103,7 +103,9 @@ class RolesAndPermissionsSeeder extends Seeder
                 $P::VIEW_ACTIVITY_LOG,
 
                 $P::VIEW_IMAGING_REQUESTS,
-                $P::VIEW_DEVICES,
+                $P::VIEW_ALL_IMAGING_REQUESTS,
+                $P::MANAGE_IMAGING_QUEUE,
+                $P::DELETE_ANY_IMAGING_FILE,
             ],
 
             RoleEnum::DOCTOR->value => [
@@ -155,9 +157,10 @@ class RolesAndPermissionsSeeder extends Seeder
                 $P::CREATE_NOTE,
 
                 $P::CREATE_IMAGING_REQUEST,
-                $P::VIEW_IMAGING_REQUESTS,
-                $P::UPLOAD_IMAGING_FILES,
-                $P::DELETE_IMAGING_FILE,
+                $P::VIEW_OWN_IMAGING_REQUESTS,
+                $P::CANCEL_IMAGING_REQUEST,
+                $P::UPLOAD_DOCTOR_IMAGING_FILES,
+                $P::UPLOAD_EXTERNAL_IMAGING_FILES,
 
                 $P::VIEW_SURGERIES,
                 $P::CREATE_SURGERY,
@@ -192,6 +195,9 @@ class RolesAndPermissionsSeeder extends Seeder
 
                 $P::VIEW_IMAGING_REQUESTS,
                 $P::CONFIRM_IMAGING_REQUEST,
+                $P::CREATE_IMAGING_REQUEST_FOR_PATIENT,
+                $P::CONFIRM_IMAGING_PAYMENT,
+                $P::SEND_IMAGING_REQUEST_TO_TECHNICIAN,
 
                 $P::VIEW_SURGERIES,
                 $P::CONFIRM_SURGERY,
@@ -227,14 +233,14 @@ class RolesAndPermissionsSeeder extends Seeder
             ],
 
             RoleEnum::IMAGING_TECHNICIAN->value => [
-                $P::VIEW_IMAGING_REQUESTS,
                 $P::VIEW_IMAGING_QUEUE,
-                $P::MANAGE_IMAGING_QUEUE,
 
                 $P::UPLOAD_IMAGING_FILES,
-                $P::DELETE_IMAGING_FILE,
+                $P::DELETE_OWN_IMAGING_FILE,
 
                 $P::UPDATE_IMAGING_STATUS,
+                $P::START_IMAGING_REQUEST,
+                $P::COMPLETE_IMAGING_REQUEST,
 
                 $P::VIEW_PATIENTS,
                 $P::SEARCH_PATIENT,

@@ -10,17 +10,41 @@ return new class extends Migration
     {
         Schema::create('clinic_devices', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('room_id')->nullable()->constrained('rooms')->nullOnDelete();
+
+            $table->foreignId('room_id')
+                ->nullable()
+                ->constrained('rooms')
+                ->nullOnDelete();
+
             $table->string('name');
+
+            $table->string('device_identifier')->nullable()->unique();
             $table->string('serial_number')->nullable();
+
             $table->string('device_type');
             $table->string('manufacturer')->nullable();
             $table->string('model')->nullable();
-            $table->string('status')->default('active'); // active - maintenance - offline - retired
+
+            $table->string('status')->default('active');
+
             $table->dateTime('last_maintenance_at')->nullable();
             $table->text('notes')->nullable();
-            $table->foreignId('created_by')->nullable()->constrained('staff')->nullOnDelete();
+
+            $table->foreignId('created_by')
+                ->nullable()
+                ->constrained('staff')
+                ->nullOnDelete();
+
+            $table->foreignId('updated_by')
+                ->nullable()
+                ->constrained('staff')
+                ->nullOnDelete();
+
             $table->timestamps();
+
+            $table->index('room_id');
+            $table->index('device_type');
+            $table->index('status');
         });
     }
 
