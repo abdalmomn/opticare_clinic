@@ -61,8 +61,58 @@ class ImagingRequestRepository extends BaseRepository
                 'technician:id,name',
                 'room:id,name',
                 'items',
+                'files' => fn ($query) => $query->orderBy('id'),
+                'files.device:id,name,device_identifier,device_type',
+                'files.uploader:id,name',
             ])
             ->find($id);
+    }
+
+    public function findActiveForTechnician(int $technicianId): ?ImagingRequest
+    {
+        $id = $this->query()
+            ->where('technician_id', $technicianId)
+            ->where('status', ImagingRequest::STATUS_IN_PROGRESS)
+            ->value('id');
+
+        return $id ? $this->findDetailed((int) $id) : null;
+    }
+
+    public function technicianHasActive(int $technicianId): bool
+    {
+        return $this->query()
+            ->where('technician_id', $technicianId)
+            ->where('status', ImagingRequest::STATUS_IN_PROGRESS)
+            ->exists();
+    }
+
+    public function paginateTechnicianQueue(Staff $actor, array $filters): LengthAwarePaginator
+    {
+        $query = $this->query()
+            ->with([
+                'patient:id,medical_file_number,full_name,birth_date',
+                'requestedBy:id,name',
+                'technician:id,name',
+                'room:id,name',
+                'items',
+            ])
+            ->where('status', ImagingRequest::STATUS_READY_FOR_IMAGING)
+            ->where(function (Builder $subQuery) use ($actor) {
+                $subQuery->whereNull('technician_id')
+                    ->orWhere('technician_id', $actor->id);
+            });
+
+        $this->applyFilters($query, $filters);
+
+        $perPage = isset($filters['per_page'])
+            ? min(max((int) $filters['per_page'], 1), 100)
+            : 15;
+
+        return $query
+            ->orderByRaw("CASE WHEN priority = 'urgent' THEN 0 ELSE 1 END")
+            ->orderBy('sent_to_technician_at')
+            ->orderBy('id')
+            ->paginate($perPage);
     }
 
     public function paginateForActor(Staff $actor, array $filters): LengthAwarePaginator

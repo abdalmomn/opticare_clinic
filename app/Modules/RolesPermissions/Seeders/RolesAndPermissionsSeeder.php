@@ -162,6 +162,12 @@ class RolesAndPermissionsSeeder extends Seeder
                 $P::UPLOAD_DOCTOR_IMAGING_FILES,
                 $P::UPLOAD_EXTERNAL_IMAGING_FILES,
 
+                $P::VIEW_DEVICES,
+                $P::CREATE_DEVICE,
+                $P::EDIT_DEVICE,
+                $P::TOGGLE_DEVICE_STATUS,
+                $P::DELETE_DEVICE,
+
                 $P::VIEW_SURGERIES,
                 $P::CREATE_SURGERY,
 
@@ -198,6 +204,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 $P::CREATE_IMAGING_REQUEST_FOR_PATIENT,
                 $P::CONFIRM_IMAGING_PAYMENT,
                 $P::SEND_IMAGING_REQUEST_TO_TECHNICIAN,
+                $P::CANCEL_IMAGING_REQUEST,
 
                 $P::VIEW_SURGERIES,
                 $P::CONFIRM_SURGERY,
@@ -214,6 +221,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 $P::CREATE_DEVICE,
                 $P::EDIT_DEVICE,
                 $P::TOGGLE_DEVICE_STATUS,
+                $P::DELETE_DEVICE,
 
                 $P::VIEW_CLINIC_ROOMS,
                 $P::CREATE_CLINIC_ROOM,

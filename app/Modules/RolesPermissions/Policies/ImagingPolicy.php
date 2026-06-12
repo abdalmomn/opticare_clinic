@@ -55,13 +55,18 @@ class ImagingPolicy
             return false;
         }
 
-        return (int) $request->requested_by === (int) $staff->id
-            && ! in_array($request->status, [
-                ImagingRequest::STATUS_IN_PROGRESS,
-                ImagingRequest::STATUS_COMPLETED,
-                ImagingRequest::STATUS_CANCELLED,
-                ImagingRequest::LEGACY_STATUS_CANCELED,
-            ], true);
+        if ($this->hasAnyPermission($staff, [
+            PermissionList::VIEW_ALL_IMAGING_REQUESTS,
+            PermissionList::VIEW_IMAGING_REQUESTS,
+        ])) {
+            return true;
+        }
+
+        if (AccessControlHelper::staffHasPermission($staff, PermissionList::VIEW_OWN_IMAGING_REQUESTS)) {
+            return (int) $request->requested_by === (int) $staff->id;
+        }
+
+        return false;
     }
 
     public function confirm(Staff $staff, ImagingRequest $request): bool

@@ -1,0 +1,330 @@
+{
+  "info": {
+    "_postman_id": "6b8a69d4-bcf5-46a5-a211-a7a62bb6901a",
+    "name": "Opticare Clinic - Medical Records",
+    "description": "Postman collection for the routes in app/Modules/MedicalRecords/Routes/api.php. All endpoints require a Sanctum bearer token.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.test('Response is not a server error', function () {",
+          "    pm.expect(pm.response.code).to.be.below(500);",
+          "});"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "patient_id",
+      "value": "1"
+    },
+    {
+      "key": "appointment_id",
+      "value": "1"
+    },
+    {
+      "key": "visit_id",
+      "value": "1"
+    }
+  ],
+  "item": [
+    {
+      "name": "Diagnosis Codes",
+      "item": [
+        {
+          "name": "List Diagnosis Codes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/medical-records/diagnosis-codes?search=glaucoma&is_active=true&per_page=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "medical-records",
+                "diagnosis-codes"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "glaucoma",
+                  "disabled": true
+                },
+                {
+                  "key": "is_active",
+                  "value": "true",
+                  "disabled": true
+                },
+                {
+                  "key": "per_page",
+                  "value": "20",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Search diagnosis codes. Optional parameters: search, is_active, per_page (1-100)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Patient Medical Record",
+      "item": [
+        {
+          "name": "Get Unified Record",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/medical-records/patients/{{patient_id}}/unified-record"
+          },
+          "response": []
+        },
+        {
+          "name": "Visits Timeline",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/medical-records/patients/{{patient_id}}/timeline/visits?date_from=2026-01-01&date_to=2026-12-31&per_page=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "medical-records",
+                "patients",
+                "{{patient_id}}",
+                "timeline",
+                "visits"
+              ],
+              "query": [
+                {
+                  "key": "date_from",
+                  "value": "2026-01-01",
+                  "disabled": true
+                },
+                {
+                  "key": "date_to",
+                  "value": "2026-12-31",
+                  "disabled": true
+                },
+                {
+                  "key": "per_page",
+                  "value": "20",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reports Timeline",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/medical-records/patients/{{patient_id}}/timeline/reports"
+          },
+          "response": []
+        },
+        {
+          "name": "Prescriptions Timeline",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/medical-records/patients/{{patient_id}}/timeline/prescriptions"
+          },
+          "response": []
+        },
+        {
+          "name": "Measurements Timeline",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/medical-records/patients/{{patient_id}}/timeline/measurements"
+          },
+          "response": []
+        },
+        {
+          "name": "Diagnoses Timeline",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/medical-records/patients/{{patient_id}}/timeline/diagnoses"
+          },
+          "response": []
+        },
+        {
+          "name": "Private Notes Timeline",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/medical-records/patients/{{patient_id}}/timeline/private-notes"
+          },
+          "response": []
+        }
+      ],
+      "description": "Timeline endpoints accept optional date_from, date_to, and per_page query parameters."
+    },
+    {
+      "name": "Visit Sessions",
+      "item": [
+        {
+          "name": "Get Visit Session",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/medical-records/appointments/{{appointment_id}}/visit-session"
+          },
+          "response": []
+        },
+        {
+          "name": "Open Visit Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"visit_type\": \"consultation\",\n  \"notes\": \"Initial visit session notes\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/api/medical-records/appointments/{{appointment_id}}/visit-session",
+            "description": "Opens or returns the visit session for an in-progress appointment. visit_type may be consultation, follow_up, emergency, or post_op."
+          },
+          "response": []
+        },
+        {
+          "name": "Save Visit Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"visit\": {\n    \"visit_type\": \"consultation\",\n    \"chief_complaint\": \"Blurred vision\",\n    \"symptoms\": \"Intermittent headaches and blurred distance vision\",\n    \"examination_notes\": \"Anterior segment appears normal\",\n    \"diagnosis\": \"Suspected refractive error\",\n    \"treatment_plan\": \"Corrective lenses and follow-up\",\n    \"notes\": \"Patient tolerated examination well\"\n  },\n  \"eye_measurement\": {\n    \"visual_acuity_od\": \"20/40\",\n    \"visual_acuity_os\": \"20/30\",\n    \"iop_od\": 16,\n    \"iop_os\": 15,\n    \"notes\": \"Measurements taken before dilation\",\n    \"measured_at\": \"2026-06-10T10:00:00+03:00\"\n  },\n  \"report\": {\n    \"title\": \"Eye examination report\",\n    \"report_text\": \"Routine eye examination completed.\",\n    \"images\": []\n  },\n  \"prescription\": {\n    \"prescription_text\": \"Use as directed.\",\n    \"notes\": \"Review after two weeks\",\n    \"items\": [\n      {\n        \"medicine_name\": \"Example medicine\",\n        \"dosage\": \"1 drop\",\n        \"frequency\": \"Twice daily\",\n        \"duration\": \"14 days\"\n      }\n    ]\n  },\n  \"diagnosis_codes\": [],\n  \"private_note\": {\n    \"note\": \"Internal note visible to the doctor.\",\n    \"visibility\": \"private\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/api/medical-records/visits/{{visit_id}}/save-session",
+            "description": "Saves all supplied visit sections. Remove sections you do not want to update. diagnosis_codes is a sync list of diagnosis_codes table IDs. report.images may contain imaging_request_id and imaging_file_id."
+          },
+          "response": []
+        },
+        {
+          "name": "Finalize Visit Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/medical-records/visits/{{visit_id}}/finalize",
+            "description": "Finalizes the draft visit and completes its in-progress appointment."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

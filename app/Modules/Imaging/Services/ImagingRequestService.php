@@ -4,6 +4,8 @@ namespace App\Modules\Imaging\Services;
 
 use App\Modules\Authentication\Models\Staff;
 use App\Modules\Appointments\Repositories\AppointmentRepository;
+use App\Modules\Imaging\Models\ImagingActivityLog;
+use App\Modules\Imaging\Models\ImagingFile;
 use App\Modules\Imaging\Models\ImagingQueue;
 use App\Modules\Imaging\Models\ImagingRequest;
 use App\Modules\Imaging\Models\ImagingRequestItem;
@@ -26,7 +28,8 @@ class ImagingRequestService
         protected ImagingQueueRepository $queueRepository,
         protected ClinicPatientRepository $patientRepository,
         protected VisitRecordRepository $visitRecordRepository,
-        protected AppointmentRepository $appointmentRepository
+        protected AppointmentRepository $appointmentRepository,
+        protected ImagingActivityLogService $activityLog
     ) {}
 
     public function create(array $data, Staff $actor): array
@@ -92,6 +95,13 @@ class ImagingRequestService
 
         $imagingRequest = $this->repository->createWithItems($payload, $data['requested_types']);
 
+        $this->activityLog->record(
+            ImagingActivityLog::ACTION_REQUEST_CREATED,
+            imagingRequestId: $imagingRequest->id,
+            actorId: $actor->id,
+            toStatus: ImagingRequest::STATUS_PENDING_PAYMENT
+        );
+
         return [
             'request' => $this->formatRequest($imagingRequest, $actor),
         ];
@@ -138,7 +148,6 @@ class ImagingRequestService
             );
         }
 
-        Gate::forUser($actor)->authorize('cancel', $imagingRequest);
 
         if (in_array($imagingRequest->status, [
             ImagingRequest::STATUS_IN_PROGRESS,
@@ -152,6 +161,8 @@ class ImagingRequestService
             );
         }
 
+        $previousStatus = ImagingRequest::normalizeStatus($imagingRequest->status ?? '');
+
         $payload = [
             'status' => ImagingRequest::STATUS_CANCELLED,
             'cancelled_at' => now(),
@@ -160,6 +171,14 @@ class ImagingRequestService
         ];
 
         $updatedRequest = $this->repository->cancel($imagingRequest, $payload);
+
+        $this->activityLog->record(
+            ImagingActivityLog::ACTION_REQUEST_CANCELLED,
+            imagingRequestId: $updatedRequest->id,
+            actorId: $actor->id,
+            fromStatus: $previousStatus,
+            toStatus: ImagingRequest::STATUS_CANCELLED
+        );
 
         return ['request' => $this->formatRequest($updatedRequest, $actor)];
     }
@@ -175,8 +194,6 @@ class ImagingRequestService
                     __('imaging.errors.not_found')
                 );
             }
-
-            Gate::forUser($actor)->authorize('confirmPayment', $imagingRequest);
 
             $status = ImagingRequest::normalizeStatus($imagingRequest->status ?? '');
 
@@ -205,6 +222,16 @@ class ImagingRequestService
 
             $imagingRequest->update($payload);
 
+            $this->activityLog->record(
+                $waive
+                    ? ImagingActivityLog::ACTION_PAYMENT_WAIVED
+                    : ImagingActivityLog::ACTION_PAYMENT_CONFIRMED,
+                imagingRequestId: $imagingRequest->id,
+                actorId: $actor->id,
+                fromStatus: ImagingRequest::STATUS_PENDING_PAYMENT,
+                toStatus: ImagingRequest::STATUS_PAYMENT_CONFIRMED
+            );
+
             return [
                 'request' => $this->formatRequest(
                     $this->repository->findDetailed($imagingRequest->id),
@@ -225,8 +252,6 @@ class ImagingRequestService
                     __('imaging.errors.not_found')
                 );
             }
-
-            Gate::forUser($actor)->authorize('sendToTechnician', $imagingRequest);
 
             $status = ImagingRequest::normalizeStatus($imagingRequest->status ?? '');
 
@@ -284,6 +309,155 @@ class ImagingRequestService
                 'status' => ImagingQueue::STATUS_DISPATCHED,
                 'dispatched_at' => now(),
             ]);
+
+            $this->activityLog->record(
+                ImagingActivityLog::ACTION_SENT_TO_TECHNICIAN,
+                imagingRequestId: $imagingRequest->id,
+                actorId: $actor->id,
+                fromStatus: $status,
+                toStatus: ImagingRequest::STATUS_READY_FOR_IMAGING,
+                metadata: $technicianId !== null ? ['technician_id' => $technicianId] : null
+            );
+
+            return [
+                'request' => $this->formatRequest(
+                    $this->repository->findDetailed($imagingRequest->id),
+                    $actor
+                ),
+            ];
+        });
+    }
+
+    public function technicianQueue(array $filters, Staff $actor): array
+    {
+        Gate::forUser($actor)->authorize('viewQueue', ImagingRequest::class);
+
+        $currentRequest = $this->repository->findActiveForTechnician($actor->id);
+        $paginator = $this->repository->paginateTechnicianQueue($actor, $filters);
+
+        return [
+            'current_request' => $currentRequest
+                ? $this->formatRequest($currentRequest, $actor)
+                : null,
+            'items' => $paginator->getCollection()
+                ->map(fn (ImagingRequest $request) => $this->formatRequest($request, $actor))
+                ->all(),
+        ];
+    }
+
+    public function start($request, Staff $actor): array
+    {
+        return DB::transaction(function () use ($request, $actor) {
+            $imagingRequest = $this->repository->lockForUpdate($this->requestId($request));
+
+            if (! $imagingRequest) {
+                throw new HttpException(
+                    Response::HTTP_NOT_FOUND,
+                    __('imaging.errors.not_found')
+                );
+            }
+
+            Gate::forUser($actor)->authorize('start', $imagingRequest);
+
+            $status = ImagingRequest::normalizeStatus($imagingRequest->status ?? '');
+
+            if ($status !== ImagingRequest::STATUS_READY_FOR_IMAGING) {
+                throw new HttpException(
+                    Response::HTTP_UNPROCESSABLE_ENTITY,
+                    __('imaging.errors.cannot_start')
+                );
+            }
+
+            if (config('opticare.imaging_one_at_a_time', true)
+                && $this->repository->technicianHasActive($actor->id)
+            ) {
+                throw new HttpException(
+                    Response::HTTP_UNPROCESSABLE_ENTITY,
+                    __('imaging.errors.technician_busy')
+                );
+            }
+
+            $imagingRequest->update([
+                'status' => ImagingRequest::STATUS_IN_PROGRESS,
+                'technician_id' => $imagingRequest->technician_id ?? $actor->id,
+                'started_at' => now(),
+                'updated_by' => $actor->id,
+            ]);
+
+            $existingQueue = $this->queueRepository->findByRequest($imagingRequest->id);
+
+            $this->queueRepository->upsertForRequest($imagingRequest->id, [
+                'technician_id' => $imagingRequest->technician_id,
+                'queue_number' => $existingQueue?->queue_number ?? $this->queueRepository->nextQueueNumber(),
+                'status' => ImagingQueue::STATUS_IN_PROGRESS,
+                'started_at' => now(),
+            ]);
+
+            $this->activityLog->record(
+                ImagingActivityLog::ACTION_STARTED,
+                imagingRequestId: $imagingRequest->id,
+                actorId: $actor->id,
+                fromStatus: ImagingRequest::STATUS_READY_FOR_IMAGING,
+                toStatus: ImagingRequest::STATUS_IN_PROGRESS
+            );
+
+            return [
+                'request' => $this->formatRequest(
+                    $this->repository->findDetailed($imagingRequest->id),
+                    $actor
+                ),
+            ];
+        });
+    }
+
+    public function complete($request, Staff $actor): array
+    {
+        return DB::transaction(function () use ($request, $actor) {
+            $imagingRequest = $this->repository->lockForUpdate($this->requestId($request));
+
+            if (! $imagingRequest) {
+                throw new HttpException(
+                    Response::HTTP_NOT_FOUND,
+                    __('imaging.errors.not_found')
+                );
+            }
+
+            Gate::forUser($actor)->authorize('complete', $imagingRequest);
+
+            $status = ImagingRequest::normalizeStatus($imagingRequest->status ?? '');
+
+            if ($status !== ImagingRequest::STATUS_IN_PROGRESS) {
+                throw new HttpException(
+                    Response::HTTP_UNPROCESSABLE_ENTITY,
+                    __('imaging.errors.cannot_complete')
+                );
+            }
+
+            if (! $imagingRequest->files()->exists()) {
+                throw new HttpException(
+                    Response::HTTP_UNPROCESSABLE_ENTITY,
+                    __('imaging.errors.no_files_uploaded')
+                );
+            }
+
+            $imagingRequest->update([
+                'status' => ImagingRequest::STATUS_COMPLETED,
+                'completed_at' => now(),
+                'updated_by' => $actor->id,
+            ]);
+
+            $this->queueRepository->upsertForRequest($imagingRequest->id, [
+                'status' => ImagingQueue::STATUS_COMPLETED,
+                'completed_at' => now(),
+            ]);
+
+            $this->activityLog->record(
+                ImagingActivityLog::ACTION_COMPLETED,
+                imagingRequestId: $imagingRequest->id,
+                actorId: $actor->id,
+                fromStatus: ImagingRequest::STATUS_IN_PROGRESS,
+                toStatus: ImagingRequest::STATUS_COMPLETED
+            );
 
             return [
                 'request' => $this->formatRequest(
@@ -408,11 +582,11 @@ class ImagingRequestService
         return $staff->id;
     }
 
-    private function formatRequest(ImagingRequest $request, Staff $actor): array
+    public function formatRequest(ImagingRequest $request, Staff $actor): array
     {
         $status = ImagingRequest::normalizeStatus($request->status ?? '');
 
-        return [
+        $formatted = [
             'id' => $request->id,
             'status' => $status,
             'status_label' => $this->formatStatusLabel($status),
@@ -432,8 +606,101 @@ class ImagingRequestService
             'timestamps' => $this->formatTimestamps($request),
             'notes' => $request->notes,
             'cancel_reason' => $request->cancel_reason,
-            'actions' => $this->formatActions($request, $actor),
         ];
+
+        if ($request->relationLoaded('files')) {
+            $formatted['files'] = $request->files
+                ->map(fn (ImagingFile $file) => $this->formatFile($file))
+                ->all();
+            $formatted['files_count'] = count($formatted['files']);
+        }
+
+        return $formatted;
+    }
+
+    public function formatFile(ImagingFile $file): array
+    {
+        return [
+            'id' => $file->id,
+            'label' => $this->formatFileLabel($file),
+            'image_type' => $file->image_type !== null && $file->image_type !== ''
+                ? $file->image_type
+                : ($file->modality !== null && $file->modality !== '' ? $file->modality : null),
+            'modality' => $file->modality,
+            'eye' => $file->eye,
+            'region' => $file->region,
+            'file_name' => $file->file_name,
+            'file_url' => $this->formatFileUrl($file->file_path),
+            'thumbnail_url' => $file->thumbnail_path
+                ? $this->formatFileUrl($file->thumbnail_path)
+                : null,
+            'file_size' => $file->file_size,
+            'mime_type' => $file->mime_type,
+            'captured_at' => $this->formatDate($file->captured_at),
+            'uploaded_at' => $this->formatDate($file->uploaded_at),
+            'source' => $file->source,
+            'is_primary' => (bool) $file->is_primary,
+            'imaging_request_item_id' => $file->imaging_request_item_id,
+            'device' => $this->formatDeviceSummary($file),
+            'uploaded_by' => $file->relationLoaded('uploader')
+                ? $this->formatStaffSummary($file->uploader)
+                : null,
+        ];
+    }
+
+    private function formatDeviceSummary(ImagingFile $file): ?array
+    {
+        if ($file->relationLoaded('device') && $file->device) {
+            return [
+                'id' => $file->device->id,
+                'name' => $file->device->name,
+                'device_identifier' => $file->device->device_identifier,
+                'type' => $file->device->device_type,
+            ];
+        }
+
+        if (! empty($file->device_name)) {
+            return [
+                'id' => $file->device_id,
+                'name' => $file->device_name,
+                'device_identifier' => null,
+                'type' => null,
+            ];
+        }
+
+        return null;
+    }
+
+    private function formatFileLabel(ImagingFile $file): ?string
+    {
+        if (! empty($file->image_label)) {
+            return $file->image_label;
+        }
+
+        if (! empty($file->region) && ! empty($file->eye)) {
+            return $file->region.' '.$file->eye;
+        }
+
+        if (! empty($file->modality)) {
+            return $file->modality;
+        }
+
+        return $file->file_name
+            ? pathinfo($file->file_name, PATHINFO_FILENAME)
+            : null;
+    }
+
+    private function formatFileUrl(?string $path): ?string
+    {
+        if (empty($path)) {
+            return null;
+        }
+
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
+        }
+
+        return asset('storage/'.ltrim($path, '/'));
     }
 
     private function formatPatientSummary(?\App\Modules\Patients\Models\ClinicPatient $patient): ?array

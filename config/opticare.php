@@ -18,6 +18,8 @@ return [
 
     'imaging_one_at_a_time' => env('OPTICARE_IMAGING_ONE_AT_A_TIME', true),
 
+    'imaging_max_upload_kb' => env('OPTICARE_IMAGING_MAX_UPLOAD_KB', 20480),
+
     'clinic_id' => env('OPTICARE_CLINIC_ID', 1),
 
     'captcha_enabled' => env('OPTICARE_CAPTCHA_ENABLED', false),

@@ -1,0 +1,510 @@
+{
+  "info": {
+    "_postman_id": "7da432ba-76fb-45be-929a-70472c90cdf1",
+    "name": "Opticare Clinic - Imaging",
+    "description": "Complete collection for app/Modules/Imaging/Routes/api.php. All routes require Sanctum bearer authentication. Set token and entity ID variables before use. Optional query parameters are included but disabled. Multipart requests contain one file/metadata pair; add matching files[n] and metadata[n][...] fields for additional files.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{token}}", "type": "string" }
+    ]
+  },
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.test('Response is successful', function () {",
+          "    pm.expect(pm.response.code).to.be.within(200, 299);",
+          "});",
+          "pm.test('Response is JSON', function () {",
+          "    pm.response.to.be.json;",
+          "});"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1:8000" },
+    { "key": "token", "value": "" },
+    { "key": "imaging_request_id", "value": "1" },
+    { "key": "imaging_file_id", "value": "1" },
+    { "key": "imaging_request_item_id", "value": "1" },
+    { "key": "device_id", "value": "1" },
+    { "key": "patient_id", "value": "1" },
+    { "key": "visit_record_id", "value": "1" },
+    { "key": "appointment_id", "value": "1" },
+    { "key": "requested_by", "value": "1" },
+    { "key": "technician_id", "value": "1" },
+    { "key": "room_id", "value": "1" },
+    { "key": "invoice_item_id", "value": "1" },
+    { "key": "actor_id", "value": "1" },
+    { "key": "date_from", "value": "2026-01-01" },
+    { "key": "date_to", "value": "2026-12-31" }
+  ],
+  "item": [
+    {
+      "name": "Imaging Requests",
+      "item": [
+        {
+          "name": "List Imaging Requests",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/imaging/requests",
+              "host": ["{{base_url}}"],
+              "path": ["api", "imaging", "requests"],
+              "query": [
+                { "key": "status", "value": "requested", "disabled": true, "description": "requested, pending_payment, payment_confirmed, ready_for_imaging, in_progress, completed, cancelled, pending, canceled" },
+                { "key": "payment_status", "value": "pending", "disabled": true, "description": "pending, confirmed, waived, refunded" },
+                { "key": "patient_id", "value": "{{patient_id}}", "disabled": true },
+                { "key": "requested_by", "value": "{{requested_by}}", "disabled": true },
+                { "key": "technician_id", "value": "{{technician_id}}", "disabled": true },
+                { "key": "priority", "value": "normal", "disabled": true, "description": "normal or urgent" },
+                { "key": "date_from", "value": "{{date_from}}", "disabled": true },
+                { "key": "date_to", "value": "{{date_to}}", "disabled": true },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "per_page", "value": "15", "disabled": true },
+                { "key": "page", "value": "1", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Imaging Request",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "const json = pm.response.json();",
+                "const id = json?.data?.id;",
+                "if (id) pm.collectionVariables.set('imaging_request_id', id);"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patient_id\": {{patient_id}},\n  \"visit_record_id\": {{visit_record_id}},\n  \"appointment_id\": {{appointment_id}},\n  \"requested_by\": {{requested_by}},\n  \"room_id\": {{room_id}},\n  \"notes\": \"OCT requested during examination\",\n  \"priority\": \"normal\",\n  \"requested_types\": [\n    {\n      \"image_type\": \"OCT\",\n      \"eye\": \"left\",\n      \"region\": \"macula\",\n      \"notes\": \"Macular scan\"\n    }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/imaging/requests"
+          }
+        },
+        {
+          "name": "Show Imaging Request",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/api/imaging/requests/{{imaging_request_id}}"
+          }
+        },
+        {
+          "name": "Cancel Imaging Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Patient requested cancellation\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/imaging/requests/{{imaging_request_id}}/cancel"
+          }
+        },
+        {
+          "name": "Confirm Imaging Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invoice_item_id\": {{invoice_item_id}},\n  \"waive\": false,\n  \"notes\": \"Payment confirmed\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/imaging/requests/{{imaging_request_id}}/confirm-payment"
+          }
+        },
+        {
+          "name": "Waive Imaging Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"waive\": true,\n  \"notes\": \"Payment waived by authorized staff\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/imaging/requests/{{imaging_request_id}}/confirm-payment"
+          }
+        },
+        {
+          "name": "Send Request To Technician",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"technician_id\": {{technician_id}},\n  \"room_id\": {{room_id}},\n  \"priority\": \"normal\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/imaging/requests/{{imaging_request_id}}/send-to-technician"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Technician Workflow",
+      "item": [
+        {
+          "name": "List Technician Queue",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/imaging/technician/requests",
+              "host": ["{{base_url}}"],
+              "path": ["api", "imaging", "technician", "requests"],
+              "query": [
+                { "key": "priority", "value": "normal", "disabled": true, "description": "normal or urgent" },
+                { "key": "patient_id", "value": "{{patient_id}}", "disabled": true },
+                { "key": "date_from", "value": "{{date_from}}", "disabled": true },
+                { "key": "date_to", "value": "{{date_to}}", "disabled": true },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "per_page", "value": "15", "disabled": true },
+                { "key": "page", "value": "1", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Start Imaging Request",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/api/imaging/requests/{{imaging_request_id}}/start"
+          }
+        },
+        {
+          "name": "Complete Imaging Request",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/api/imaging/requests/{{imaging_request_id}}/complete"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Imaging Files",
+      "item": [
+        {
+          "name": "Upload Files To Request",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "device_id", "value": "{{device_id}}", "type": "text" },
+                { "key": "files[0]", "type": "file", "src": [] },
+                { "key": "metadata[0][image_type]", "value": "OCT", "type": "text" },
+                { "key": "metadata[0][modality]", "value": "OCT", "type": "text" },
+                { "key": "metadata[0][eye]", "value": "left", "type": "text" },
+                { "key": "metadata[0][region]", "value": "macula", "type": "text" },
+                { "key": "metadata[0][image_label]", "value": "Left eye macular OCT", "type": "text" },
+                { "key": "metadata[0][captured_at]", "value": "2026-06-12T10:00:00+03:00", "type": "text" },
+                { "key": "metadata[0][imaging_request_item_id]", "value": "{{imaging_request_item_id}}", "type": "text", "disabled": true },
+                { "key": "metadata[0][is_primary]", "value": "1", "type": "text" }
+              ]
+            },
+            "url": "{{base_url}}/api/imaging/requests/{{imaging_request_id}}/files"
+          }
+        },
+        {
+          "name": "Delete Imaging File",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/api/imaging/files/{{imaging_file_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Direct Uploads",
+      "item": [
+        {
+          "name": "Direct Imaging Upload",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "patient_id", "value": "{{patient_id}}", "type": "text" },
+                { "key": "visit_record_id", "value": "{{visit_record_id}}", "type": "text", "disabled": true },
+                { "key": "appointment_id", "value": "{{appointment_id}}", "type": "text", "disabled": true },
+                { "key": "notes", "value": "Direct upload by doctor", "type": "text" },
+                { "key": "files[0]", "type": "file", "src": [] },
+                { "key": "metadata[0][image_type]", "value": "Fundus", "type": "text" },
+                { "key": "metadata[0][modality]", "value": "Fundus Photography", "type": "text" },
+                { "key": "metadata[0][eye]", "value": "right", "type": "text" },
+                { "key": "metadata[0][region]", "value": "retina", "type": "text" },
+                { "key": "metadata[0][image_label]", "value": "Right eye fundus", "type": "text" },
+                { "key": "metadata[0][captured_at]", "value": "2026-06-12T10:00:00+03:00", "type": "text" },
+                { "key": "metadata[0][device_id]", "value": "{{device_id}}", "type": "text", "disabled": true },
+                { "key": "metadata[0][is_primary]", "value": "1", "type": "text" }
+              ]
+            },
+            "url": "{{base_url}}/api/imaging/direct-upload"
+          }
+        },
+        {
+          "name": "External Imaging Upload",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "patient_id", "value": "{{patient_id}}", "type": "text" },
+                { "key": "visit_record_id", "value": "{{visit_record_id}}", "type": "text", "disabled": true },
+                { "key": "appointment_id", "value": "{{appointment_id}}", "type": "text", "disabled": true },
+                { "key": "notes", "value": "Imported from external imaging center", "type": "text" },
+                { "key": "files[0]", "type": "file", "src": [] },
+                { "key": "metadata[0][image_type]", "value": "OCT", "type": "text" },
+                { "key": "metadata[0][modality]", "value": "OCT", "type": "text" },
+                { "key": "metadata[0][eye]", "value": "left", "type": "text" },
+                { "key": "metadata[0][region]", "value": "macula", "type": "text" },
+                { "key": "metadata[0][image_label]", "value": "External OCT", "type": "text" },
+                { "key": "metadata[0][captured_at]", "value": "2026-06-12T10:00:00+03:00", "type": "text" },
+                { "key": "metadata[0][device_id]", "value": "{{device_id}}", "type": "text", "disabled": true },
+                { "key": "metadata[0][device_name]", "value": "External OCT Scanner", "type": "text" },
+                { "key": "metadata[0][is_primary]", "value": "1", "type": "text" }
+              ]
+            },
+            "url": "{{base_url}}/api/imaging/external-upload"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Imaging Devices",
+      "item": [
+        {
+          "name": "List Imaging Devices",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/imaging/devices",
+              "host": ["{{base_url}}"],
+              "path": ["api", "imaging", "devices"],
+              "query": [
+                { "key": "status", "value": "active", "disabled": true, "description": "active, maintenance, offline, retired" },
+                { "key": "room_id", "value": "{{room_id}}", "disabled": true },
+                { "key": "device_type", "value": "OCT", "disabled": true },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "per_page", "value": "15", "disabled": true },
+                { "key": "page", "value": "1", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Imaging Device",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "const json = pm.response.json();",
+                "const id = json?.data?.id;",
+                "if (id) pm.collectionVariables.set('device_id', id);"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"OCT Scanner 1\",\n  \"device_identifier\": \"OCT-001\",\n  \"serial_number\": \"SN-001\",\n  \"device_type\": \"OCT\",\n  \"manufacturer\": \"Opticare\",\n  \"model\": \"OCT Pro\",\n  \"room_id\": {{room_id}},\n  \"status\": \"active\",\n  \"last_maintenance_at\": \"2026-06-01\",\n  \"notes\": \"Primary OCT scanner\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/imaging/devices"
+          }
+        },
+        {
+          "name": "Show Imaging Device",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/api/imaging/devices/{{device_id}}"
+          }
+        },
+        {
+          "name": "Update Imaging Device",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"OCT Scanner 1 - Updated\",\n  \"room_id\": {{room_id}},\n  \"status\": \"maintenance\",\n  \"last_maintenance_at\": \"2026-06-12\",\n  \"notes\": \"Scheduled maintenance\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/imaging/devices/{{device_id}}"
+          }
+        },
+        {
+          "name": "Activate Imaging Device",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/api/imaging/devices/{{device_id}}/activate"
+          }
+        },
+        {
+          "name": "Deactivate Imaging Device",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/api/imaging/devices/{{device_id}}/deactivate"
+          }
+        },
+        {
+          "name": "Delete Or Retire Imaging Device",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/api/imaging/devices/{{device_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Statistics",
+      "item": [
+        {
+          "name": "Statistics Overview",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/imaging/statistics/overview",
+              "host": ["{{base_url}}"],
+              "path": ["api", "imaging", "statistics", "overview"],
+              "query": [
+                { "key": "date_from", "value": "{{date_from}}", "disabled": true },
+                { "key": "date_to", "value": "{{date_to}}", "disabled": true },
+                { "key": "doctor_id", "value": "{{requested_by}}", "disabled": true },
+                { "key": "technician_id", "value": "{{technician_id}}", "disabled": true },
+                { "key": "room_id", "value": "{{room_id}}", "disabled": true },
+                { "key": "device_id", "value": "{{device_id}}", "disabled": true },
+                { "key": "source", "value": "doctor_request", "disabled": true, "description": "doctor_request, secretary_request, doctor_upload, external" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Statistics By Device",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/imaging/statistics/by-device",
+              "host": ["{{base_url}}"],
+              "path": ["api", "imaging", "statistics", "by-device"],
+              "query": [
+                { "key": "date_from", "value": "{{date_from}}", "disabled": true },
+                { "key": "date_to", "value": "{{date_to}}", "disabled": true },
+                { "key": "doctor_id", "value": "{{requested_by}}", "disabled": true },
+                { "key": "technician_id", "value": "{{technician_id}}", "disabled": true },
+                { "key": "room_id", "value": "{{room_id}}", "disabled": true },
+                { "key": "device_id", "value": "{{device_id}}", "disabled": true },
+                { "key": "source", "value": "doctor_request", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Statistics By Type",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/imaging/statistics/by-type",
+              "host": ["{{base_url}}"],
+              "path": ["api", "imaging", "statistics", "by-type"],
+              "query": [
+                { "key": "date_from", "value": "{{date_from}}", "disabled": true },
+                { "key": "date_to", "value": "{{date_to}}", "disabled": true },
+                { "key": "doctor_id", "value": "{{requested_by}}", "disabled": true },
+                { "key": "technician_id", "value": "{{technician_id}}", "disabled": true },
+                { "key": "room_id", "value": "{{room_id}}", "disabled": true },
+                { "key": "device_id", "value": "{{device_id}}", "disabled": true },
+                { "key": "source", "value": "doctor_request", "disabled": true }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Activity Logs",
+      "item": [
+        {
+          "name": "List Imaging Activity Logs",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/imaging/activity-logs",
+              "host": ["{{base_url}}"],
+              "path": ["api", "imaging", "activity-logs"],
+              "query": [
+                { "key": "imaging_request_id", "value": "{{imaging_request_id}}", "disabled": true },
+                { "key": "imaging_file_id", "value": "{{imaging_file_id}}", "disabled": true },
+                { "key": "actor_id", "value": "{{actor_id}}", "disabled": true },
+                { "key": "action", "value": "request_created", "disabled": true, "description": "request_created, request_cancelled, payment_confirmed, payment_waived, sent_to_technician, started, file_uploaded, file_deleted, completed, direct_upload_created, external_upload_created, device_created, device_updated, device_activated, device_deactivated, device_deleted_or_retired" },
+                { "key": "date_from", "value": "{{date_from}}", "disabled": true },
+                { "key": "date_to", "value": "{{date_to}}", "disabled": true },
+                { "key": "per_page", "value": "15", "disabled": true },
+                { "key": "page", "value": "1", "disabled": true }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
