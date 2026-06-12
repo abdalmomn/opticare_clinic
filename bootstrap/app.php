@@ -24,4 +24,11 @@ return Application::configure(basePath: dirname(__DIR__))
             }
         });
 
-    })->create();
+    })
+    ->withBroadcasting(
+        __DIR__.'/../routes/channels.php',
+        [
+            'prefix' => 'api',
+            'middleware' => ['api', 'auth:sanctum'],
+        ]
+    )->create();

@@ -4,9 +4,7 @@ namespace App\Modules\Appointments\Helpers;
 
 class AppointmentHelper
 {
-    /**
-     * Format appointment data for response
-     */
+
     public static function format($appointment): array
     {
         if (! $appointment) {
@@ -47,6 +45,23 @@ class AppointmentHelper
             'completed_at' => $appointment->completed_at,
             'created_at' => $appointment->created_at,
             'updated_at' => $appointment->updated_at,
+        ];
+    }
+
+
+    public static function formatPaginated($paginator): array
+    {
+        return [
+            'items' => $paginator->items(),
+            'pagination' => [
+                'current_page' => $paginator->currentPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'last_page' => $paginator->lastPage(),
+                'from' => $paginator->firstItem(),
+                'to' => $paginator->lastItem(),
+                'has_more' => $paginator->hasMorePages(),
+            ],
         ];
     }
 }

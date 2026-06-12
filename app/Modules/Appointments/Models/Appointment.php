@@ -56,8 +56,6 @@ class Appointment extends Model
         'completed_at' => 'datetime',
     ];
 
-    // ─── Relationships ────────────────────────────────────────
-
     public function patient(): BelongsTo
     {
         return $this->belongsTo(ClinicPatient::class, 'patient_id');
@@ -124,19 +122,12 @@ class Appointment extends Model
     }
 
     // ─── Status Constants ────────────────────────────────────
-
     public const STATUS_BOOKED = 'booked';
-
     public const STATUS_CONFIRMED = 'confirmed';
-
     public const STATUS_WAITING = 'waiting';
-
     public const STATUS_IN_PROGRESS = 'in_progress';
-
     public const STATUS_COMPLETED = 'completed';
-
     public const STATUS_CANCELLED = 'cancelled';
-
     public const STATUS_NO_SHOW = 'no_show';
 
     public static function statuses(): array
@@ -153,15 +144,10 @@ class Appointment extends Model
     }
 
     // ─── Type Constants ──────────────────────────────────────
-
     public const TYPE_CONSULTATION = 'consultation';
-
     public const TYPE_FOLLOW_UP = 'follow_up';
-
     public const TYPE_IMAGING = 'imaging';
-
     public const TYPE_CONSULTATION_AND_IMAGING = 'consultation_and_imaging';
-
     public const TYPE_SURGERY_PREPARATION = 'surgery_preparation';
 
     public static function types(): array

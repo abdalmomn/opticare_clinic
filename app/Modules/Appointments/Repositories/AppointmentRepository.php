@@ -12,14 +12,10 @@ class AppointmentRepository extends BaseRepository
         parent::__construct($model);
     }
 
-    /**
-     * Search appointments with filters
-     */
     public function search(array $filters): LengthAwarePaginator
     {
         $query = $this->model->newQuery()->with(['patient', 'doctor']);
 
-        // Date filtering
         if (! empty($filters['date'])) {
             $date = $filters['date'];
             $query->whereDate('appointment_at', $date);
@@ -33,7 +29,6 @@ class AppointmentRepository extends BaseRepository
             $query->whereDate('appointment_at', '<=', $filters['date_to']);
         }
 
-        // Status filtering
         if (! empty($filters['status'])) {
             $status = $filters['status'];
             if (is_array($status)) {
@@ -43,7 +38,6 @@ class AppointmentRepository extends BaseRepository
             }
         }
 
-        // Type filtering
         if (! empty($filters['type'])) {
             $type = $filters['type'];
             if (is_array($type)) {
@@ -53,17 +47,14 @@ class AppointmentRepository extends BaseRepository
             }
         }
 
-        // Patient filtering
         if (! empty($filters['patient_id'])) {
             $query->where('patient_id', $filters['patient_id']);
         }
 
-        // Doctor filtering
         if (! empty($filters['doctor_id'])) {
             $query->where('doctor_id', $filters['doctor_id']);
         }
 
-        // Keyword search
         if (! empty($filters['keyword'])) {
             $keyword = trim((string) $filters['keyword']);
 
@@ -84,7 +75,6 @@ class AppointmentRepository extends BaseRepository
             });
         }
 
-        // Pagination
         $perPage = isset($filters['per_page'])
             ? min(max((int) $filters['per_page'], 1), 100)
             : 15;
@@ -92,9 +82,6 @@ class AppointmentRepository extends BaseRepository
         return $query->orderBy('appointment_at', 'desc')->paginate($perPage);
     }
 
-    /**
-     * Find appointment by ID with relationships
-     */
     public function findAppointmentById(int $id): ?Appointment
     {
         return $this->model->newQuery()
@@ -112,17 +99,11 @@ class AppointmentRepository extends BaseRepository
             ->find($id);
     }
 
-    /**
-     * Create appointment
-     */
     public function createAppointment(array $data): Appointment
     {
         return $this->model->create($data);
     }
 
-    /**
-     * Update appointment
-     */
     public function updateAppointment(Appointment $appointment, array $data): Appointment
     {
         $appointment->update($data);
@@ -130,9 +111,6 @@ class AppointmentRepository extends BaseRepository
         return $this->findAppointmentById($appointment->id);
     }
 
-    /**
-     * Get next queue number for a specific appointment date
-     */
     public function nextQueueNumberForDate(string $date): int
     {
         $maxQueue = $this->model->newQuery()
@@ -143,9 +121,6 @@ class AppointmentRepository extends BaseRepository
         return ($maxQueue ?? 0) + 1;
     }
 
-    /**
-     * Get today's appointments
-     */
     public function todayAppointments(array $filters = []): LengthAwarePaginator
     {
         $filters['date'] = now()->toDateString();
@@ -153,9 +128,6 @@ class AppointmentRepository extends BaseRepository
         return $this->search($filters);
     }
 
-    /**
-     * Get queue appointments for a date
-     */
     public function queue(array $filters = []): LengthAwarePaginator
     {
         $date = $filters['date'] ?? now()->toDateString();
@@ -177,9 +149,6 @@ class AppointmentRepository extends BaseRepository
         return $query->paginate($perPage);
     }
 
-    /**
-     * Get doctor's today appointments
-     */
     public function doctorTodayAppointments(int $doctorId, array $filters = []): LengthAwarePaginator
     {
         $filters['date'] = $filters['date'] ?? now()->toDateString();

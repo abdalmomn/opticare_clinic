@@ -21,9 +21,6 @@ class AppointmentController extends Controller
         protected AppointmentService $service
     ) {}
 
-    /**
-     * List appointments
-     */
     public function index(ListAppointmentsRequest $request): JsonResponse
     {
         $result = $this->service->listAppointments(
@@ -37,9 +34,6 @@ class AppointmentController extends Controller
         );
     }
 
-    /**
-     * Get today's appointments
-     */
     public function today(ListAppointmentsRequest $request): JsonResponse
     {
         $result = $this->service->todayAppointments(
@@ -53,9 +47,6 @@ class AppointmentController extends Controller
         );
     }
 
-    /**
-     * Get queue appointments
-     */
     public function queue(ListAppointmentsRequest $request): JsonResponse
     {
         $result = $this->service->queue(
@@ -69,9 +60,6 @@ class AppointmentController extends Controller
         );
     }
 
-    /**
-     * Get doctor's today appointments
-     */
     public function doctorToday(ListAppointmentsRequest $request): JsonResponse
     {
         $result = $this->service->doctorTodayAppointments(
@@ -85,9 +73,6 @@ class AppointmentController extends Controller
         );
     }
 
-    /**
-     * Create appointment
-     */
     public function store(StoreAppointmentRequest $request): JsonResponse
     {
         $result = $this->service->createAppointment(
@@ -101,9 +86,6 @@ class AppointmentController extends Controller
         );
     }
 
-    /**
-     * Show appointment
-     */
     public function show(int $appointment): JsonResponse
     {
         $result = $this->service->showAppointment(
@@ -117,9 +99,6 @@ class AppointmentController extends Controller
         );
     }
 
-    /**
-     * Update appointment
-     */
     public function update(UpdateAppointmentRequest $request, int $appointment): JsonResponse
     {
         $result = $this->service->updateAppointment(
@@ -134,9 +113,6 @@ class AppointmentController extends Controller
         );
     }
 
-    /**
-     * Confirm appointment
-     */
     public function confirm(int $appointment): JsonResponse
     {
         $result = $this->service->confirmAppointment(
@@ -150,9 +126,6 @@ class AppointmentController extends Controller
         );
     }
 
-    /**
-     * Cancel appointment
-     */
     public function cancel(CancelAppointmentRequest $request, int $appointment): JsonResponse
     {
         $result = $this->service->cancelAppointment(
@@ -167,9 +140,6 @@ class AppointmentController extends Controller
         );
     }
 
-    /**
-     * Check-in appointment
-     */
     public function checkIn(CheckInAppointmentRequest $request, int $appointment): JsonResponse
     {
         $result = $this->service->checkInAppointment(
@@ -184,9 +154,6 @@ class AppointmentController extends Controller
         );
     }
 
-    /**
-     * Assign doctor to appointment
-     */
     public function assignDoctor(AssignDoctorRequest $request, int $appointment): JsonResponse
     {
         $result = $this->service->assignDoctor(
@@ -201,9 +168,6 @@ class AppointmentController extends Controller
         );
     }
 
-    /**
-     * Start appointment examination
-     */
     public function start(int $appointment): JsonResponse
     {
         $result = $this->service->startAppointment(
@@ -217,9 +181,6 @@ class AppointmentController extends Controller
         );
     }
 
-    /**
-     * Complete appointment
-     */
     public function complete(CompleteAppointmentRequest $request, int $appointment): JsonResponse
     {
         $result = $this->service->completeAppointment(
