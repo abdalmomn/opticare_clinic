@@ -17,7 +17,8 @@ return new class extends Migration
 
             $table->string('permission_name');
 
-            $table->enum('effect', ['grant', 'deny']);
+            $table->string('effect', 10)
+                ->comment('Permission override effect: grant, deny');
             // grant = add permission to this staff
             // deny  = block permission from this staff even if role has it
 

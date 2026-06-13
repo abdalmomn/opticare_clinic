@@ -12,7 +12,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('patient_id')->constrained('clinic_patients')->cascadeOnDelete();
             $table->foreignId('assigned_staff_id')->nullable()->constrained('staff')->nullOnDelete();
-            $table->string('status')->default('open'); // open - closed - waiting
+            $table->string('status', 20)->default('open')
+                ->comment('Conversation status: open, closed, waiting');
             $table->dateTime('last_message_at')->nullable();
             $table->timestamps();
         });

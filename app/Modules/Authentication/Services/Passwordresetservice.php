@@ -38,12 +38,12 @@ class PasswordResetService
             throw new HttpException(422, __('auth.errors.captcha_failed'));
         }
 
-        $otpChannel = $this->otpChannel();
+        $otpChannel = AuthHelper::otpChannel();
 
         $staff = $this->staffRepository->findActiveByEmail($email);
 
         if (! $staff) {
-            return $this->genericSendCodeResponse();
+            return AuthHelper::genericSendCodeResponse();
         }
 
         if ($otpChannel === 'sms' && empty($staff->phone)) {
@@ -189,28 +189,5 @@ class PasswordResetService
         $this->otpRepository->markAsUsed($record);
 
         $staff->tokens()->delete();
-    }
-
-    private function otpChannel(): string
-    {
-        $channel = config('opticare.otp_channel', 'email');
-
-        if (! in_array($channel, ['email', 'sms', 'both'], true)) {
-            return 'email';
-        }
-
-        return $channel;
-    }
-
-    private function genericSendCodeResponse(): array
-    {
-        $baseDelay = (int) config('opticare.otp_resend_base_seconds', 20);
-
-        return [
-            'resend_available_at' => now()
-                ->addSeconds($baseDelay)
-                ->toISOString(),
-            'otp_channel' => $this->otpChannel(),
-        ];
     }
 }

@@ -2,7 +2,9 @@
 
 namespace App\Modules\Imaging\Requests;
 
+use App\Modules\Clinic\Enums\ClinicDeviceStatusEnum;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class ListImagingDevicesRequest extends FormRequest
 {
@@ -14,7 +16,7 @@ class ListImagingDevicesRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => 'nullable|string|in:active,maintenance,offline,retired',
+            'status' => ['nullable', Rule::enum(ClinicDeviceStatusEnum::class)],
             'room_id' => 'nullable|integer|exists:rooms,id',
             'device_type' => 'nullable|string|max:100',
             'search' => 'nullable|string|max:255',

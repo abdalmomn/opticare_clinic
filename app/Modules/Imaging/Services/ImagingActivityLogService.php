@@ -3,6 +3,7 @@
 namespace App\Modules\Imaging\Services;
 
 use App\Modules\Authentication\Models\Staff;
+use App\Modules\Imaging\Helpers\ImagingHelper;
 use App\Modules\Imaging\Models\ImagingActivityLog;
 use App\Modules\Imaging\Repositories\ImagingActivityLogRepository;
 use App\Modules\RolesPermissions\Constants\PermissionList;
@@ -31,7 +32,7 @@ class ImagingActivityLogService
 
         return [
             'items' => $paginator->getCollection()
-                ->map(fn (ImagingActivityLog $log) => $this->formatLog($log))
+                ->map(fn (ImagingActivityLog $log) => ImagingHelper::formatLog($log))
                 ->all(),
             'pagination' => [
                 'current_page' => $paginator->currentPage(),
@@ -45,10 +46,6 @@ class ImagingActivityLogService
         ];
     }
 
-    /**
-     * Best-effort audit logging: a logging failure must never roll back or
-     * abort the business transition that triggered it.
-     */
     public function record(
         string $action,
         ?int $imagingRequestId = null,
@@ -76,24 +73,5 @@ class ImagingActivityLogService
                 'imaging_file_id' => $imagingFileId,
             ]);
         }
-    }
-
-    private function formatLog(ImagingActivityLog $log): array
-    {
-        return [
-            'id' => $log->id,
-            'action' => $log->action,
-            'imaging_request_id' => $log->imaging_request_id,
-            'imaging_file_id' => $log->imaging_file_id,
-            'actor' => $log->actor
-                ? ['id' => $log->actor->id, 'name' => $log->actor->name]
-                : null,
-            'from_status' => $log->from_status,
-            'to_status' => $log->to_status,
-            'metadata' => $log->metadata,
-            'created_at' => $log->created_at
-                ? Carbon::parse($log->created_at)->toISOString()
-                : null,
-        ];
     }
 }

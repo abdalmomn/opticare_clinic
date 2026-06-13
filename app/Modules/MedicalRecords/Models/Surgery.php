@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use App\Modules\Patients\Models\ClinicPatient;
 use App\Modules\Authentication\Models\Staff;
+use App\Modules\MedicalRecords\Enums\SurgeryStatusEnum;
 
 class Surgery extends Model
 {
@@ -22,6 +23,7 @@ class Surgery extends Model
     protected $casts = [
         'surgery_date' => 'datetime',
         'created_at'   => 'datetime',
+        'status'       => SurgeryStatusEnum::class,
     ];
 
     public function patient(): BelongsTo

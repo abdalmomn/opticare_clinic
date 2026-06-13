@@ -25,7 +25,8 @@ return new class extends Migration
             $table->string('manufacturer')->nullable();
             $table->string('model')->nullable();
 
-            $table->string('status')->default('active');
+            $table->string('status', 20)->default('active')
+                ->comment('Clinic device status: active, maintenance, offline, retired');
 
             $table->dateTime('last_maintenance_at')->nullable();
             $table->text('notes')->nullable();

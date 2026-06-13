@@ -11,7 +11,8 @@ class ApiResponse
         string $message = 'Success',
         int $statusCode = 200,
         array $meta = []
-    ): JsonResponse {
+    ):JsonResponse
+    {
         $response = [
             'success'     => true,
             'status_code' => $statusCode,
@@ -22,15 +23,11 @@ class ApiResponse
         if (! empty($meta)) {
             $response['meta'] = $meta;
         }
-
         return response()->json($response, $statusCode);
     }
 
-    public static function created(
-        mixed $data = null,
-        string $message = 'Created successfully',
-        array $meta = []
-    ): JsonResponse {
+    public static function created(mixed $data = null, string $message = 'created successfully', array $meta = []):JsonResponse
+    {
         return self::success(
             data: $data,
             message: $message,
@@ -39,9 +36,8 @@ class ApiResponse
         );
     }
 
-    public static function noContent(
-        string $message = 'No content'
-    ): JsonResponse {
+    public static function noContent(string $message = 'no content'):JsonResponse
+    {
         return self::success(
             data: null,
             message: $message,
@@ -50,11 +46,12 @@ class ApiResponse
     }
 
     public static function error(
-        string $message = 'Something went wrong',
+        string $message = 'something went wrong',
         int $statusCode = 500,
         ?string $code = null,
         mixed $errors = null
-    ): JsonResponse {
+    ):JsonResponse
+    {
         $response = [
             'success'     => false,
             'status_code' => $statusCode,
@@ -62,14 +59,11 @@ class ApiResponse
             'code'        => $code,
             'errors'      => $errors,
         ];
-
         return response()->json($response, $statusCode);
     }
 
-    public static function validationError(
-        mixed $errors,
-        string $message = 'Validation failed'
-    ): JsonResponse {
+    public static function validationError(mixed $errors, string $message = 'validation failed'):JsonResponse
+    {
         return self::error(
             message: $message,
             statusCode: 422,
@@ -78,9 +72,8 @@ class ApiResponse
         );
     }
 
-    public static function unauthorized(
-        string $message = 'Unauthenticated'
-    ): JsonResponse {
+    public static function unauthorized(string $message = 'unauthenticated'):JsonResponse
+    {
         return self::error(
             message: $message,
             statusCode: 401,
@@ -88,9 +81,8 @@ class ApiResponse
         );
     }
 
-    public static function forbidden(
-        string $message = 'This action is unauthorized'
-    ): JsonResponse {
+    public static function forbidden(string $message = 'this action is unauthorized'):JsonResponse
+    {
         return self::error(
             message: $message,
             statusCode: 403,
@@ -98,9 +90,8 @@ class ApiResponse
         );
     }
 
-    public static function notFound(
-        string $message = 'Resource not found'
-    ): JsonResponse {
+    public static function notFound(string $message = 'resource not found'):JsonResponse
+    {
         return self::error(
             message: $message,
             statusCode: 404,
@@ -108,9 +99,8 @@ class ApiResponse
         );
     }
 
-    public static function serverError(
-        string $message = 'Internal server error'
-    ): JsonResponse {
+    public static function serverError(string $message = 'internal server error'):JsonResponse
+    {
         return self::error(
             message: $message,
             statusCode: 500,
@@ -121,19 +111,20 @@ class ApiResponse
 
     public static function handleException(\Throwable $e): \Illuminate\Http\JsonResponse
 {
-    if ($e instanceof \Illuminate\Auth\AuthenticationException) {
+    if ($e instanceof \Illuminate\Auth\AuthenticationException)
+    {
     return self::unauthorized(__('auth.errors.unauthenticated'));
     }
-
-    if ($e instanceof \Illuminate\Auth\Access\AuthorizationException) {
+    if ($e instanceof \Illuminate\Auth\Access\AuthorizationException)
+    {
         return self::forbidden(__('auth.errors.forbidden'));
     }
-
-    if ($e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException) {
+    if ($e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException)
+    {
         return self::notFound(__('auth.errors.not_found'));
     }
-
-    if ($e instanceof ApiException) {
+    if ($e instanceof ApiException)
+    {
         return self::error(
             message: $e->getMessage() ?: __('auth.errors.generic_error'),
             statusCode: $e->getStatusCode(),
@@ -141,21 +132,20 @@ class ApiResponse
             errors: $e->getErrors()
         );
     }
-    
-    if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpException) {
+    if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpException)
+    {
         return self::error(
             message: $e->getMessage() ?: __('auth.errors.generic_error'),
             statusCode: $e->getStatusCode(),
         );
     }
-
-    if ($e instanceof \Illuminate\Validation\ValidationException) {
+    if ($e instanceof \Illuminate\Validation\ValidationException)
+    {
         return self::validationError(
             errors:  $e->errors(),
             message: __('auth.validation.failed')
         );
     }
-
     $message = app()->environment('production')
         ? __('auth.errors.server_error')
         : $e->getMessage();

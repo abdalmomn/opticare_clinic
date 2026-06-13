@@ -5,6 +5,7 @@ namespace App\Modules\Payments\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Modules\Authentication\Models\Staff;
+use App\Modules\Payments\Enums\PaymentMethodEnum;
 
 class Payment extends Model
 {
@@ -18,8 +19,9 @@ class Payment extends Model
     ];
 
     protected $casts = [
-        'payment_date' => 'datetime',
-        'created_at'   => 'datetime',
+        'payment_date'   => 'datetime',
+        'created_at'     => 'datetime',
+        'payment_method' => PaymentMethodEnum::class,
     ];
 
     public function invoice(): BelongsTo

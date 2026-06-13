@@ -2,7 +2,10 @@
 
 namespace App\Modules\Appointments\Models;
 
+use App\Modules\Appointments\Enums\AppointmentStatusEnum;
+use App\Modules\Appointments\Enums\AppointmentTypeEnum;
 use App\Modules\Authentication\Models\Staff;
+use App\Modules\Clinic\Models\Room;
 use App\Modules\Imaging\Models\ImagingFile;
 use App\Modules\Imaging\Models\ImagingRequest;
 use App\Modules\MedicalRecords\Models\EyeMeasurement;
@@ -20,6 +23,18 @@ class Appointment extends Model
     protected $fillable = [
         'patient_id',
         'doctor_id',
+        'room_id',
+        'appointment_at',
+        'appointment_date',
+        'appointment_time',
+        'status',
+        'type',
+        'source',
+        'queue_number',
+        'reason',
+        'notes',
+        'cancel_reason',
+        'completion_notes',
         'created_by',
         'updated_by',
         'confirmed_by',
@@ -27,34 +42,27 @@ class Appointment extends Model
         'checked_in_by',
         'started_by',
         'completed_by',
-        'appointment_at',
-        'appointment_date',
-        'appointment_time',
-        'type',
-        'status',
-        'queue_number',
-        'reason',
-        'notes',
-        'cancel_reason',
-        'completion_notes',
         'confirmed_at',
         'cancelled_at',
         'checked_in_at',
         'started_at',
         'completed_at',
-        'room_id',
-        'source',
     ];
 
-    protected $casts = [
-        'appointment_at' => 'datetime',
-        'appointment_date' => 'date',
-        'confirmed_at' => 'datetime',
-        'cancelled_at' => 'datetime',
-        'checked_in_at' => 'datetime',
-        'started_at' => 'datetime',
-        'completed_at' => 'datetime',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'appointment_at' => 'datetime',
+            'appointment_date' => 'date',
+            'appointment_time' => 'datetime:H:i:s',
+            'confirmed_at' => 'datetime',
+            'cancelled_at' => 'datetime',
+            'checked_in_at' => 'datetime',
+            'started_at' => 'datetime',
+            'completed_at' => 'datetime',
+            'queue_number' => 'integer',
+        ];
+    }
 
     public function patient(): BelongsTo
     {
@@ -64,6 +72,11 @@ class Appointment extends Model
     public function doctor(): BelongsTo
     {
         return $this->belongsTo(Staff::class, 'doctor_id');
+    }
+
+    public function room(): BelongsTo
+    {
+        return $this->belongsTo(Room::class,'room_id');
     }
 
     public function createdBy(): BelongsTo
@@ -121,7 +134,6 @@ class Appointment extends Model
         return $this->hasMany(ImagingFile::class, 'appointment_id');
     }
 
-    // ─── Status Constants ────────────────────────────────────
     public const STATUS_BOOKED = 'booked';
     public const STATUS_CONFIRMED = 'confirmed';
     public const STATUS_WAITING = 'waiting';
@@ -132,18 +144,9 @@ class Appointment extends Model
 
     public static function statuses(): array
     {
-        return [
-            self::STATUS_BOOKED,
-            self::STATUS_CONFIRMED,
-            self::STATUS_WAITING,
-            self::STATUS_IN_PROGRESS,
-            self::STATUS_COMPLETED,
-            self::STATUS_CANCELLED,
-            self::STATUS_NO_SHOW,
-        ];
+        return AppointmentStatusEnum::values();
     }
 
-    // ─── Type Constants ──────────────────────────────────────
     public const TYPE_CONSULTATION = 'consultation';
     public const TYPE_FOLLOW_UP = 'follow_up';
     public const TYPE_IMAGING = 'imaging';
@@ -152,12 +155,6 @@ class Appointment extends Model
 
     public static function types(): array
     {
-        return [
-            self::TYPE_CONSULTATION,
-            self::TYPE_FOLLOW_UP,
-            self::TYPE_IMAGING,
-            self::TYPE_CONSULTATION_AND_IMAGING,
-            self::TYPE_SURGERY_PREPARATION,
-        ];
+        return AppointmentTypeEnum::values();
     }
 }

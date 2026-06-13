@@ -19,7 +19,8 @@ return new class extends Migration
             $table->string('eye')->nullable();
             $table->string('region')->nullable();
             $table->text('notes')->nullable();
-            $table->string('status')->default('requested');
+            $table->string('status', 20)->default('requested')
+                ->comment('Imaging request item status: requested, captured, skipped');
             $table->timestamps();
 
             $table->index(['imaging_request_id', 'status']);

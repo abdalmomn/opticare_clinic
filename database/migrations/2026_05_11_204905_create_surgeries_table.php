@@ -13,7 +13,8 @@ return new class extends Migration
             $table->foreignId('patient_id')->constrained('clinic_patients')->cascadeOnDelete();
             $table->foreignId('doctor_id')->constrained('staff')->cascadeOnDelete();
             $table->string('surgery_type');
-            $table->string('status')->default('scheduled'); // scheduled - completed - canceled
+            $table->string('status', 20)->default('scheduled')
+                ->comment('Surgery status: scheduled, completed, canceled');
             $table->text('notes')->nullable();
             $table->dateTime('surgery_date');
             $table->dateTime('created_at')->nullable();

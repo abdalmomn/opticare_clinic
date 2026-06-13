@@ -2,15 +2,6 @@
 
 namespace App\Modules\RolesPermissions\Enums;
 
-/*
-======================================
- // CLINIC_ADMIN
- // clinic-level admin has been added for two reasons:
- // if there are two doctor in one clinic, one of them can be assigned as clinic admin to manage staff and settings
- // doctors in medical center can not be clinic admins, only medical center admin can manage their roles and permissions
-======================================
-*/
-
 enum RoleEnum: string
 {
     case MEDICAL_CENTER_ADMIN = 'medical_center_admin';

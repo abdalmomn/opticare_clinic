@@ -3,6 +3,7 @@
 namespace App\Modules\MedicalRecords\Models;
 
 use App\Modules\Authentication\Models\Staff;
+use App\Modules\MedicalRecords\Enums\PrescriptionStatusEnum;
 use App\Modules\Patients\Models\ClinicPatient;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -33,10 +34,7 @@ class Prescription extends Model
 
     public static function statuses(): array
     {
-        return [
-            self::STATUS_DRAFT,
-            self::STATUS_FINALIZED,
-        ];
+        return PrescriptionStatusEnum::values();
     }
 
     public function patient(): BelongsTo

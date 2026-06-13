@@ -3,6 +3,7 @@
 namespace App\Modules\Imaging\Services;
 
 use App\Modules\Authentication\Models\Staff;
+use App\Modules\Imaging\Helpers\ImagingHelper;
 use App\Modules\Imaging\Models\ImagingRequest;
 use App\Modules\Imaging\Repositories\ImagingStatisticsRepository;
 use App\Modules\RolesPermissions\Constants\PermissionList;
@@ -19,9 +20,9 @@ class ImagingStatisticsService
 
     public function overview(array $filters, Staff $actor): array
     {
-        $this->ensureCanViewStatistics($actor);
+        ImagingHelper::ensureCanViewStatistics($actor);
 
-        $byStatus = $this->normalizeStatusCounts($this->repository->countByStatus($filters));
+        $byStatus = ImagingHelper::normalizeStatusCounts($this->repository->countByStatus($filters));
 
         return [
             'totals' => [
@@ -67,7 +68,7 @@ class ImagingStatisticsService
 
     public function byDevice(array $filters, Staff $actor): array
     {
-        $this->ensureCanViewStatistics($actor);
+        ImagingHelper::ensureCanViewStatistics($actor);
 
         $rows = $this->repository->aggregateByDevice($filters);
         $devices = $this->repository->devicesByIds($rows->pluck('device_id')->all());
@@ -98,7 +99,7 @@ class ImagingStatisticsService
 
     public function byType(array $filters, Staff $actor): array
     {
-        $this->ensureCanViewStatistics($actor);
+        ImagingHelper::ensureCanViewStatistics($actor);
 
         return [
             'items' => $this->repository->aggregateByType($filters)
@@ -110,27 +111,5 @@ class ImagingStatisticsService
                 ->values()
                 ->all(),
         ];
-    }
-
-    private function normalizeStatusCounts($counts): array
-    {
-        $normalized = [];
-
-        foreach ($counts as $status => $count) {
-            $key = ImagingRequest::normalizeStatus((string) $status);
-            $normalized[$key] = ($normalized[$key] ?? 0) + (int) $count;
-        }
-
-        return $normalized;
-    }
-
-    private function ensureCanViewStatistics(Staff $actor): void
-    {
-        if (! AccessControlHelper::staffHasPermission($actor, PermissionList::VIEW_STATISTICS)) {
-            throw new HttpException(
-                Response::HTTP_FORBIDDEN,
-                __('imaging.errors.not_allowed_statistics')
-            );
-        }
     }
 }

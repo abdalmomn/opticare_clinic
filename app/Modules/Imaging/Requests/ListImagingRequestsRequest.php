@@ -2,7 +2,10 @@
 
 namespace App\Modules\Imaging\Requests;
 
+use App\Modules\Imaging\Enums\ImagingPaymentStatusEnum;
+use App\Modules\Imaging\Enums\ImagingRequestPriorityEnum;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class ListImagingRequestsRequest extends FormRequest
 {
@@ -14,12 +17,14 @@ class ListImagingRequestsRequest extends FormRequest
     public function rules(): array
     {
         return [
+            // Includes legacy values (pending, canceled) for backward compatibility,
+            // so this filter keeps an explicit list rather than Rule::enum.
             'status' => 'nullable|string|in:requested,pending_payment,payment_confirmed,ready_for_imaging,in_progress,completed,cancelled,pending,canceled',
-            'payment_status' => 'nullable|string|in:pending,confirmed,waived,refunded',
+            'payment_status' => ['nullable', Rule::enum(ImagingPaymentStatusEnum::class)],
             'patient_id' => 'nullable|integer|exists:clinic_patients,id',
             'requested_by' => 'nullable|integer|exists:staff,id',
             'technician_id' => 'nullable|integer|exists:staff,id',
-            'priority' => 'nullable|string|in:normal,urgent',
+            'priority' => ['nullable', Rule::enum(ImagingRequestPriorityEnum::class)],
             'date_from' => 'nullable|date',
             'date_to' => 'nullable|date|after_or_equal:date_from',
             'search' => 'nullable|string|max:255',

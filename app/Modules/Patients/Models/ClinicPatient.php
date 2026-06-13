@@ -13,6 +13,7 @@ use App\Modules\MedicalRecords\Models\MedicalReport;
 use App\Modules\MedicalRecords\Models\Prescription;
 use App\Modules\MedicalRecords\Models\Surgery;
 use App\Modules\MedicalRecords\Models\VisitRecord;
+use App\Modules\Patients\Enums\BloodTypeEnum;
 use App\Modules\Payments\Models\Invoice;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -52,12 +53,19 @@ class ClinicPatient extends Model
         'deceased_at',
     ];
 
-    protected $casts = [
+    protected function casts(): array
+{
+    return [
+        'blood_type' => BloodTypeEnum::class,
         'birth_date' => 'date',
-        'is_active' => 'boolean',
-        'archived_at' => 'datetime',
-        'deceased_at' => 'date',
+        'date_of_birth' => 'date',
+        'height_cm' => 'decimal:2',
+        'weight_kg' => 'decimal:2',
+        'is_smoker' => 'boolean',
+        'drinks_alcohol' => 'boolean',
+        'wears_glasses_or_lenses' => 'boolean',
     ];
+}
 
     public function appointments(): HasMany
     {

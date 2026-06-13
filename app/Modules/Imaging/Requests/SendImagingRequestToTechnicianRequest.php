@@ -2,7 +2,9 @@
 
 namespace App\Modules\Imaging\Requests;
 
+use App\Modules\Imaging\Enums\ImagingRequestPriorityEnum;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class SendImagingRequestToTechnicianRequest extends FormRequest
 {
@@ -16,7 +18,7 @@ class SendImagingRequestToTechnicianRequest extends FormRequest
         return [
             'technician_id' => 'required|integer|exists:staff,id',
             'room_id' => 'nullable|integer|exists:rooms,id',
-            'priority' => 'nullable|string|in:normal,urgent',
+            'priority' => ['nullable', Rule::enum(ImagingRequestPriorityEnum::class)],
         ];
     }
 

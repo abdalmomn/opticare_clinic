@@ -113,12 +113,6 @@ class AppointmentService
                 __('appointment.errors.patient_inactive')
             );
         }
-        if (! $patient->is_active) {
-            throw new HttpException(
-                Response::HTTP_UNPROCESSABLE_ENTITY,
-                __('appointment.errors.patient_inactive')
-            );
-        }
         if (! empty($data['doctor_id'])) {
             $doctor = Staff::find($data['doctor_id']);
             if (! $doctor) {
@@ -131,12 +125,6 @@ class AppointmentService
                 throw new HttpException(
                     Response::HTTP_UNPROCESSABLE_ENTITY,
                     __('appointment.errors.selected_staff_is_not_doctor')
-                );
-            }
-            if (! $doctor) {
-                throw new HttpException(
-                    Response::HTTP_NOT_FOUND,
-                    __('appointment.errors.doctor_not_found')
                 );
             }
         }
@@ -198,12 +186,6 @@ class AppointmentService
                     throw new HttpException(
                         Response::HTTP_UNPROCESSABLE_ENTITY,
                         __('appointment.errors.selected_staff_is_not_doctor')
-                    );
-                }
-                if (! $doctor) {
-                    throw new HttpException(
-                        Response::HTTP_NOT_FOUND,
-                        __('appointment.errors.doctor_not_found')
                     );
                 }
             }
@@ -325,8 +307,9 @@ class AppointmentService
                 __('appointment.errors.invalid_status_transition')
             );
         }
-        $queueNumber = $this->repository->nextQueueNumberForDate($appointment->appointment_date);
-
+        $queueNumber = $this->repository->nextQueueNumberForDate(
+            $appointment->appointment_date->toDateString()
+        );
         $payload = [
             'status' => Appointment::STATUS_WAITING,
             'queue_number' => $queueNumber,
@@ -376,12 +359,6 @@ class AppointmentService
             throw new HttpException(
                 Response::HTTP_UNPROCESSABLE_ENTITY,
                 __('appointment.errors.selected_staff_is_not_doctor')
-            );
-        }
-        if (! $doctor) {
-            throw new HttpException(
-                Response::HTTP_NOT_FOUND,
-                __('appointment.errors.doctor_not_found')
             );
         }
         $payload = [

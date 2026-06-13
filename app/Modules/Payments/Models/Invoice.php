@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Modules\Clinic\Models\ClinicPatient;
 use App\Modules\Authentication\Models\Staff;
 use App\Modules\MedicalRecords\Models\VisitRecord;
+use App\Modules\Payments\Enums\InvoiceStatusEnum;
 
 class Invoice extends Model
 {
@@ -21,7 +22,10 @@ class Invoice extends Model
         'status', 'notes', 'created_by',
     ];
 
-    protected $casts = ['created_at' => 'datetime'];
+    protected $casts = [
+        'created_at' => 'datetime',
+        'status' => InvoiceStatusEnum::class,
+    ];
 
     public function patient(): BelongsTo
     {

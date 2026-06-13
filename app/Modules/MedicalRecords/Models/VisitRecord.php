@@ -6,6 +6,8 @@ use App\Modules\Appointments\Models\Appointment;
 use App\Modules\Authentication\Models\Staff;
 use App\Modules\Imaging\Models\ImagingFile;
 use App\Modules\Imaging\Models\ImagingRequest;
+use App\Modules\MedicalRecords\Enums\VisitRecordStatusEnum;
+use App\Modules\MedicalRecords\Enums\VisitTypeEnum;
 use App\Modules\Patients\Models\ClinicPatient;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -55,21 +57,12 @@ class VisitRecord extends Model
 
     public static function statuses(): array
     {
-        return [
-            self::STATUS_DRAFT,
-            self::STATUS_FINALIZED,
-            self::STATUS_CANCELLED,
-        ];
+        return VisitRecordStatusEnum::values();
     }
 
     public static function types(): array
     {
-        return [
-            self::TYPE_CONSULTATION,
-            self::TYPE_FOLLOW_UP,
-            self::TYPE_EMERGENCY,
-            self::TYPE_POST_OP,
-        ];
+        return VisitTypeEnum::values();
     }
 
     public function patient(): BelongsTo

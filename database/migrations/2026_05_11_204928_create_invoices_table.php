@@ -16,7 +16,8 @@ return new class extends Migration
             $table->decimal('total_amount', 10, 2)->default(0);
             $table->decimal('paid_amount', 10, 2)->default(0);
             $table->decimal('remaining_amount', 10, 2)->default(0);
-            $table->string('status')->default('unpaid'); // unpaid - partial - paid - canceled
+            $table->string('status', 20)->default('unpaid')
+                ->comment('Invoice status: unpaid, partial, paid, canceled');
             $table->text('notes')->nullable();
             $table->foreignId('created_by')->constrained('staff')->cascadeOnDelete();
             $table->timestamp('created_at')->nullable();

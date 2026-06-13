@@ -26,10 +26,13 @@ return new class extends Migration
                 ->constrained('staff')
                 ->nullOnDelete();
 
-            $table->string('action');
+            $table->string('action', 40)
+                ->comment('Activity action: request_created, request_cancelled, payment_confirmed, payment_waived, sent_to_technician, started, file_uploaded, file_deleted, completed, direct_upload_created, external_upload_created, device_created, device_updated, device_activated, device_deactivated, device_deleted_or_retired');
 
-            $table->string('from_status')->nullable();
-            $table->string('to_status')->nullable();
+            $table->string('from_status', 30)->nullable()
+                ->comment('Imaging request status before the action (see imaging_requests.status)');
+            $table->string('to_status', 30)->nullable()
+                ->comment('Imaging request status after the action (see imaging_requests.status)');
 
             $table->json('metadata')->nullable();
 

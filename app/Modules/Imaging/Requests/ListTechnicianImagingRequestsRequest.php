@@ -2,7 +2,9 @@
 
 namespace App\Modules\Imaging\Requests;
 
+use App\Modules\Imaging\Enums\ImagingRequestPriorityEnum;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class ListTechnicianImagingRequestsRequest extends FormRequest
 {
@@ -14,7 +16,7 @@ class ListTechnicianImagingRequestsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'priority' => 'nullable|string|in:normal,urgent',
+            'priority' => ['nullable', Rule::enum(ImagingRequestPriorityEnum::class)],
             'patient_id' => 'nullable|integer|exists:clinic_patients,id',
             'date_from' => 'nullable|date',
             'date_to' => 'nullable|date|after_or_equal:date_from',

@@ -2,7 +2,9 @@
 
 namespace App\Modules\Imaging\Requests;
 
+use App\Modules\Imaging\Enums\ImagingRequestPriorityEnum;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreImagingRequestRequest extends FormRequest
 {
@@ -20,7 +22,7 @@ class StoreImagingRequestRequest extends FormRequest
             'requested_by' => 'nullable|integer|exists:staff,id',
             'room_id' => 'nullable|integer|exists:rooms,id',
             'notes' => 'nullable|string|max:2000',
-            'priority' => 'nullable|string|in:normal,urgent',
+            'priority' => ['nullable', Rule::enum(ImagingRequestPriorityEnum::class)],
             'requested_types' => 'required|array|min:1',
             'requested_types.*.image_type' => 'required|string|max:100',
             'requested_types.*.eye' => 'nullable|string|max:20',

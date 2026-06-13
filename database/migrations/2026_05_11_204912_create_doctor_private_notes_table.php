@@ -14,7 +14,8 @@ return new class extends Migration
             $table->foreignId('visit_record_id')->nullable()->constrained('visit_records')->nullOnDelete();
             $table->foreignId('doctor_id')->constrained('staff')->cascadeOnDelete();
             $table->text('note');
-            $table->string('visibility')->default('private'); // private - shared_internal
+            $table->string('visibility', 20)->default('private')
+                ->comment('Doctor note visibility: private, shared_internal');
             $table->timestamps();
         });
     }

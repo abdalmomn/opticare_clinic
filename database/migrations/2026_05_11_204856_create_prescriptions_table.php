@@ -27,8 +27,9 @@ return new class extends Migration
 
             $table->longText('prescription_text')->nullable();
 
-            $table->enum('status', ['draft', 'finalized'])
-                ->default('draft');
+            $table->string('status', 20)
+                ->default('draft')
+                ->comment('Prescription status: draft, finalized');
 
             $table->timestamp('finalized_at')->nullable();
 

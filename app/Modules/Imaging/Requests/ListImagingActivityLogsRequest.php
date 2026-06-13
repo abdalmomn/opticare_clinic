@@ -2,7 +2,7 @@
 
 namespace App\Modules\Imaging\Requests;
 
-use App\Modules\Imaging\Models\ImagingActivityLog;
+use App\Modules\Imaging\Enums\ImagingActivityActionEnum;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -19,7 +19,7 @@ class ListImagingActivityLogsRequest extends FormRequest
             'imaging_request_id' => 'nullable|integer|exists:imaging_requests,id',
             'imaging_file_id' => 'nullable|integer|exists:imaging_files,id',
             'actor_id' => 'nullable|integer|exists:staff,id',
-            'action' => ['nullable', 'string', Rule::in(ImagingActivityLog::actions())],
+            'action' => ['nullable', Rule::enum(ImagingActivityActionEnum::class)],
             'date_from' => 'nullable|date',
             'date_to' => 'nullable|date|after_or_equal:date_from',
             'per_page' => 'nullable|integer|min:1|max:100',

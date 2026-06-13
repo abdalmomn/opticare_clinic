@@ -5,10 +5,7 @@ namespace App\Modules\MedicalRecords\Services;
 use App\Modules\Appointments\Models\Appointment;
 use App\Modules\Appointments\Repositories\AppointmentRepository;
 use App\Modules\Authentication\Models\Staff;
-use App\Modules\MedicalRecords\Models\DoctorPrivateNote;
-use App\Modules\MedicalRecords\Models\EyeMeasurement;
-use App\Modules\MedicalRecords\Models\MedicalReport;
-use App\Modules\MedicalRecords\Models\Prescription;
+use App\Modules\MedicalRecords\Helpers\MedicalRecordVisitsHelper;
 use App\Modules\MedicalRecords\Models\VisitRecord;
 use App\Modules\MedicalRecords\Repositories\DoctorPrivateNoteRepository;
 use App\Modules\MedicalRecords\Repositories\EyeMeasurementRepository;
@@ -19,12 +16,11 @@ use App\Modules\MedicalRecords\Repositories\VisitDiagnosisCodeRepository;
 use App\Modules\MedicalRecords\Repositories\VisitRecordRepository;
 use App\Modules\RolesPermissions\Constants\PermissionList;
 use App\Modules\RolesPermissions\Enums\RoleEnum;
-use App\Modules\RolesPermissions\Helpers\AccessControlHelper;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Str;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use Illuminate\Support\Str;
 
 class VisitSessionService
 {
@@ -42,7 +38,7 @@ class VisitSessionService
 
     public function showSession(int $appointmentId, Staff $actor): array
     {
-        $this->authorize($actor, PermissionList::VIEW_MEDICAL_RECORDS, 'medical_record.errors.not_allowed_view_record');
+        MedicalRecordVisitsHelper::authorize($actor, PermissionList::VIEW_MEDICAL_RECORDS, 'medical_record.errors.not_allowed_view_record');
 
         $appointment = $this->findAppointmentOrFail($appointmentId);
 
@@ -64,13 +60,13 @@ class VisitSessionService
         }
 
         return [
-            'visit_session' => $this->formatVisitSession($session, $actor),
+            'visit_session' => MedicalRecordVisitsHelper::formatVisitSession($session, $actor),
         ];
     }
 
     public function openSession(int $appointmentId, array $data, Staff $actor): array
     {
-        $this->authorize($actor, PermissionList::CREATE_VISIT_RECORD, 'medical_record.errors.not_allowed_create_visit');
+        MedicalRecordVisitsHelper::authorize($actor, PermissionList::CREATE_VISIT_RECORD, 'medical_record.errors.not_allowed_create_visit');
 
         $appointment = $this->findAppointmentOrFail($appointmentId);
 
@@ -87,11 +83,11 @@ class VisitSessionService
             }
 
             return [
-                'visit_session' => $this->formatVisitSession($session, $actor),
+                'visit_session' => MedicalRecordVisitsHelper::formatVisitSession($session, $actor),
             ];
         }
 
-        $this->ensureAppointmentReadyForVisit($appointment, $actor);
+        MedicalRecordVisitsHelper::ensureAppointmentReadyForVisit($appointment, $actor);
 
         $visit = $this->visits->createVisit([
             'patient_id' => $appointment->patient_id,
@@ -115,25 +111,25 @@ class VisitSessionService
         }
 
         return [
-            'visit_session' => $this->formatVisitSession($session, $actor),
+            'visit_session' => MedicalRecordVisitsHelper::formatVisitSession($session, $actor),
         ];
     }
 
     public function saveSession(int $visitId, array $data, Staff $actor): array
     {
-        $this->authorize($actor, PermissionList::CREATE_VISIT_RECORD, 'medical_record.errors.not_allowed_save_session');
+        MedicalRecordVisitsHelper::authorize($actor, PermissionList::CREATE_VISIT_RECORD, 'medical_record.errors.not_allowed_save_session');
 
         $visit = $this->findEditableVisitOrFail($visitId, $actor);
 
         $doctorId = $visit->doctor_id ?? $actor->id;
 
         DB::transaction(function () use ($visit, $data, $actor, $doctorId) {
-            $visitPayload = $this->extractVisitFields($data['visit'] ?? []);
+            $visitPayload = MedicalRecordVisitsHelper::extractVisitFields($data['visit'] ?? []);
             $visitPayload['updated_by'] = $actor->id;
             $this->visits->updateVisit($visit, $visitPayload);
 
-            if ($this->present($data, 'eye_measurement')) {
-                $this->requirePermission($actor, PermissionList::CREATE_MEASUREMENT, 'medical_record.errors.not_allowed_create_measurement');
+            if (MedicalRecordVisitsHelper::present($data, 'eye_measurement')) {
+                MedicalRecordVisitsHelper::requirePermission($actor, PermissionList::CREATE_MEASUREMENT, 'medical_record.errors.not_allowed_create_measurement');
 
                 $m = $data['eye_measurement'];
                 $this->measurements->updateOrCreateForVisit($visit->id, [
@@ -151,8 +147,8 @@ class VisitSessionService
                 ]);
             }
 
-            if ($this->present($data, 'report')) {
-                $this->requirePermission($actor, PermissionList::CREATE_REPORT, 'medical_record.errors.not_allowed_create_report');
+            if (MedicalRecordVisitsHelper::present($data, 'report')) {
+                MedicalRecordVisitsHelper::requirePermission($actor, PermissionList::CREATE_REPORT, 'medical_record.errors.not_allowed_create_report');
 
                 $r = $data['report'];
                 $report = $this->reports->updateOrCreateForVisit($visit->id, [
@@ -184,8 +180,8 @@ class VisitSessionService
                 }
             }
 
-            if ($this->present($data, 'prescription')) {
-                $this->requirePermission($actor, PermissionList::CREATE_PRESCRIPTION, 'medical_record.errors.not_allowed_create_prescription');
+            if (MedicalRecordVisitsHelper::present($data, 'prescription')) {
+                MedicalRecordVisitsHelper::requirePermission($actor, PermissionList::CREATE_PRESCRIPTION, 'medical_record.errors.not_allowed_create_prescription');
 
                 $p = $data['prescription'];
                 $prescription = $this->prescriptions->updateOrCreateForVisit($visit->id, [
@@ -210,7 +206,7 @@ class VisitSessionService
             }
 
             if (array_key_exists('diagnosis_codes', $data) && is_array($data['diagnosis_codes'])) {
-                $this->requirePermission($actor, PermissionList::ADD_DISEASE_CLASSIFICATION, 'medical_record.errors.not_allowed_add_disease_classification');
+                MedicalRecordVisitsHelper::requirePermission($actor, PermissionList::ADD_DISEASE_CLASSIFICATION, 'medical_record.errors.not_allowed_add_disease_classification');
 
                 $this->diagnosisCodes->syncForVisit(
                     $visit->id,
@@ -221,8 +217,8 @@ class VisitSessionService
                 );
             }
 
-            if ($this->present($data, 'private_note') && ! empty($data['private_note']['note'])) {
-                $this->requirePermission($actor, PermissionList::CREATE_NOTE, 'medical_record.errors.not_allowed_create_note');
+            if (MedicalRecordVisitsHelper::present($data, 'private_note') && ! empty($data['private_note']['note'])) {
+                MedicalRecordVisitsHelper::requirePermission($actor, PermissionList::CREATE_NOTE, 'medical_record.errors.not_allowed_create_note');
 
                 $this->privateNotes->updateOrCreateForVisit(
                     $visit->id,
@@ -237,7 +233,7 @@ class VisitSessionService
         });
 
         return [
-            'visit_session' => $this->formatVisitSession(
+            'visit_session' => MedicalRecordVisitsHelper::formatVisitSession(
                 $this->visits->findSession($visit->id, $actor->id),
                 $actor
             ),
@@ -246,7 +242,7 @@ class VisitSessionService
 
     public function finalizeSession(int $visitId, Staff $actor): array
     {
-        $this->authorize($actor, PermissionList::CREATE_VISIT_RECORD, 'medical_record.errors.not_allowed_finalize');
+        MedicalRecordVisitsHelper::authorize($actor, PermissionList::CREATE_VISIT_RECORD, 'medical_record.errors.not_allowed_finalize');
 
         $visit = $this->findEditableVisitOrFail($visitId, $actor);
 
@@ -275,262 +271,11 @@ class VisitSessionService
         });
 
         return [
-            'visit_session' => $this->formatVisitSession(
+            'visit_session' => MedicalRecordVisitsHelper::formatVisitSession(
                 $this->visits->findSession($visit->id, $actor->id),
                 $actor
             ),
         ];
-    }
-
-    private function formatVisitSession(VisitRecord $visit, Staff $actor): array
-    {
-        return [
-            'id' => $visit->id,
-            'status' => $visit->status,
-            'status_label' => Str::headline($visit->status),
-            'is_finalized' => $visit->isFinalized(),
-            'visit_type' => $visit->visit_type,
-            'visit_at' => $this->formatDate($visit->visit_at),
-            'display_date' => $this->formatDisplayDate($visit->visit_at),
-            'finalized_at' => $this->formatDate($visit->finalized_at),
-            'patient' => $this->formatPatientSummary($visit),
-            'doctor' => $this->formatDoctorSummary($visit),
-            'appointment' => $this->formatAppointmentSummary($visit),
-            'sections' => [
-                'visit' => $this->formatVisitSection($visit),
-                'eye_measurement' => $this->formatEyeMeasurementSection($visit->latestEyeMeasurement),
-                'report' => $this->formatReportSection($visit->latestMedicalReport),
-                'prescription' => $this->formatPrescriptionSection($visit->latestPrescription),
-                'diagnosis_codes' => $this->formatDiagnosisCodesSection($visit),
-                'private_note' => $this->formatPrivateNoteSection($visit, $actor),
-            ],
-            'actions' => $this->formatActions($visit),
-        ];
-    }
-
-    private function formatPatientSummary(VisitRecord $visit): ?array
-    {
-        $patient = $visit->patient;
-
-        if (! $patient) {
-            return null;
-        }
-
-        return [
-            'id' => $patient->id,
-            'medical_file_number' => $patient->medical_file_number,
-            'full_name' => $patient->full_name,
-            'gender' => $patient->gender,
-            'birth_date' => $patient->birth_date?->format('Y-m-d'),
-            'age' => $patient->birth_date?->age,
-        ];
-    }
-
-    private function formatDoctorSummary(VisitRecord $visit): ?array
-    {
-        if (! $visit->doctor) {
-            return null;
-        }
-
-        return [
-            'id' => $visit->doctor->id,
-            'name' => $visit->doctor->name,
-        ];
-    }
-
-    private function formatAppointmentSummary(VisitRecord $visit): ?array
-    {
-        $appointment = $visit->appointment;
-
-        if (! $appointment) {
-            return null;
-        }
-
-        return [
-            'id' => $appointment->id,
-            'status' => $appointment->status,
-            'type' => $appointment->appointment_type ?: $appointment->type,
-            'appointment_at' => $this->formatDate($appointment->appointment_at),
-            'reason' => $appointment->reason,
-        ];
-    }
-
-    private function formatVisitSection(VisitRecord $visit): array
-    {
-        return [
-            'visit_type' => $visit->visit_type,
-            'chief_complaint' => $visit->chief_complaint,
-            'symptoms' => $visit->symptoms,
-            'examination_notes' => $visit->examination_notes,
-            'diagnosis' => $visit->diagnosis,
-            'treatment_plan' => $visit->treatment_plan,
-            'notes' => $visit->notes,
-        ];
-    }
-
-    private function formatEyeMeasurementSection(?EyeMeasurement $measurement): array
-    {
-        return [
-            'id' => $measurement?->id,
-            'mode' => $measurement ? 'update' : 'create',
-            'measured_at' => $this->formatDate($measurement?->measured_at),
-            'visual_acuity' => [
-                'od' => $measurement?->visual_acuity_od,
-                'os' => $measurement?->visual_acuity_os,
-                'od_placeholder' => 'e.g. 20/25',
-                'os_placeholder' => 'e.g. 20/20',
-            ],
-            'iop' => [
-                'unit' => 'mmHg',
-                'od' => $this->formatNumber($measurement?->iop_od),
-                'os' => $this->formatNumber($measurement?->iop_os),
-                'od_placeholder' => 'e.g. 16',
-                'os_placeholder' => 'e.g. 15',
-            ],
-            'notes' => $measurement?->notes,
-        ];
-    }
-
-    private function formatReportSection(?MedicalReport $report): array
-    {
-        return [
-            'id' => $report?->id,
-            'mode' => $report ? 'update' : 'create',
-            'title' => $report?->title,
-            'report_text' => $report?->report_text,
-            'status' => $report?->status ?? MedicalReport::STATUS_DRAFT,
-            'images_count' => $report?->images->count() ?? 0,
-            'images' => $report
-                ? $report->images->map(fn ($image) => [
-                    'id' => $image->id,
-                    'imaging_request_id' => $image->imaging_request_id,
-                    'imaging_file_id' => $image->imaging_file_id,
-                    'notes' => $image->notes,
-                ])->values()->all()
-                : [],
-        ];
-    }
-
-    private function formatPrescriptionSection(?Prescription $prescription): array
-    {
-        return [
-            'id' => $prescription?->id,
-            'mode' => $prescription ? 'update' : 'create',
-            'prescription_text' => $prescription?->prescription_text,
-            'status' => $prescription?->status ?? Prescription::STATUS_DRAFT,
-            'notes' => $prescription?->notes,
-            'items' => $prescription
-                ? $prescription->items->map(fn ($item) => [
-                    'id' => $item->id,
-                    'medicine_name' => $item->medicine_name,
-                    'dosage' => $item->dosage,
-                    'frequency' => $item->frequency,
-                    'duration' => $item->duration,
-                ])->values()->all()
-                : [],
-        ];
-    }
-
-    private function formatDiagnosisCodesSection(VisitRecord $visit): array
-    {
-        return $visit->diagnosisCodeLinks
-            ->map(function ($link) {
-                $code = $link->diagnosisCode;
-
-                if (! $code) {
-                    return null;
-                }
-
-                return [
-                    'id' => $code->id,
-                    'code' => $code->code,
-                    'label' => $code->code,
-                    'full_label' => trim($code->code . ' - ' . $code->name_en),
-                    'name_en' => $code->name_en,
-                    'name_ar' => $code->name_ar,
-                ];
-            })
-            ->filter()
-            ->values()
-            ->all();
-    }
-
-    private function formatPrivateNoteSection(VisitRecord $visit, Staff $actor): array
-    {
-        /** @var DoctorPrivateNote|null $note */
-        $note = $visit->privateNotes
-            ->first(fn (DoctorPrivateNote $privateNote) => (int) $privateNote->doctor_id === (int) $actor->id);
-
-        return [
-            'id' => $note?->id,
-            'mode' => $note ? 'update' : 'create',
-            'note' => $note?->note,
-            'visibility' => 'private',
-            'access_scope' => 'own_doctor_only',
-        ];
-    }
-
-    private function formatActions(VisitRecord $visit): array
-    {
-        $isDraft = $visit->status === VisitRecord::STATUS_DRAFT;
-        $isFinalized = $visit->isFinalized();
-
-        return [
-            'can_save' => $isDraft,
-            'can_finalize' => $isDraft,
-            'can_print' => $isFinalized,
-            'can_export_pdf' => $isFinalized,
-        ];
-    }
-
-    private function formatNumber($value): int|float|null
-    {
-        if ($value === null || $value === '') {
-            return null;
-        }
-
-        $number = (float) $value;
-
-        return fmod($number, 1.0) === 0.0
-            ? (int) $number
-            : $number;
-    }
-
-    private function formatDate($date): ?string
-    {
-        return $date?->toISOString();
-    }
-
-    private function formatDisplayDate($date): ?string
-    {
-        return $date?->format('M d, Y');
-    }
-
-    private function ensureAppointmentReadyForVisit(Appointment $appointment, Staff $actor): void
-    {
-        if ($appointment->status !== Appointment::STATUS_IN_PROGRESS) {
-            throw new HttpException(
-                Response::HTTP_UNPROCESSABLE_ENTITY,
-                __('medical_record.errors.appointment_not_in_progress')
-            );
-        }
-
-        if (! $appointment->doctor_id) {
-            throw new HttpException(
-                Response::HTTP_UNPROCESSABLE_ENTITY,
-                __('medical_record.errors.appointment_no_doctor')
-            );
-        }
-
-        if (
-            $actor->hasRole(RoleEnum::DOCTOR->value, 'api')
-            && (int) $appointment->doctor_id !== (int) $actor->id
-        ) {
-            throw new HttpException(
-                Response::HTTP_FORBIDDEN,
-                __('medical_record.errors.appointment_doctor_mismatch')
-            );
-        }
     }
 
     private function findEditableVisitOrFail(int $visitId, Staff $actor): VisitRecord
@@ -601,29 +346,6 @@ class VisitSessionService
         $this->appointments->updateAppointment($appointment, $payload);
     }
 
-    private function extractVisitFields(array $visit): array
-    {
-        $allowed = [
-            'visit_type',
-            'chief_complaint',
-            'symptoms',
-            'examination_notes',
-            'diagnosis',
-            'treatment_plan',
-            'notes',
-        ];
-
-        $payload = [];
-
-        foreach ($allowed as $field) {
-            if (array_key_exists($field, $visit)) {
-                $payload[$field] = $visit[$field];
-            }
-        }
-
-        return $payload;
-    }
-
     private function buildSummary(VisitRecord $visit): ?string
     {
         $fresh = $visit->fresh();
@@ -635,27 +357,6 @@ class VisitSessionService
         }
 
         return Str::limit(trim($summary), 1000, '');
-    }
-
-    private function present(array $data, string $key): bool
-    {
-        return array_key_exists($key, $data)
-            && is_array($data[$key])
-            && ! empty($data[$key]);
-    }
-
-    private function requirePermission(Staff $actor, string $permission, string $messageKey): void
-    {
-        if (! AccessControlHelper::staffHasPermission($actor, $permission)) {
-            throw new HttpException(Response::HTTP_FORBIDDEN, __($messageKey));
-        }
-    }
-
-    private function authorize(Staff $actor, string $permission, string $messageKey): void
-    {
-        if (! AccessControlHelper::staffHasPermission($actor, $permission)) {
-            throw new HttpException(Response::HTTP_FORBIDDEN, __($messageKey));
-        }
     }
 
     private function findAppointmentOrFail(int $appointmentId): Appointment

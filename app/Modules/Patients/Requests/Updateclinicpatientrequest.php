@@ -2,7 +2,12 @@
 
 namespace App\Modules\Patients\Requests;
 
+use App\Modules\Patients\Enums\BloodTypeEnum;
+use App\Modules\Patients\Enums\IdentityTypeEnum;
+use App\Modules\Patients\Enums\MaritalStatusEnum;
+use App\Modules\Patients\Enums\PatientGenderEnum;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateClinicPatientRequest extends FormRequest
 {
@@ -17,18 +22,18 @@ class UpdateClinicPatientRequest extends FormRequest
             'first_name'      => ['sometimes', 'string', 'max:255'],
             'father_name'     => ['sometimes', 'nullable', 'string', 'max:255'],
             'last_name'       => ['sometimes', 'string', 'max:255'],
-            'identity_type'   => ['sometimes', 'in:national_id,passport'],
+            'identity_type'   => ['sometimes', Rule::enum(IdentityTypeEnum::class)],
             'identity_number' => ['sometimes', 'string', 'max:50'],
 
-            'gender'          => ['sometimes', 'in:male,female'],
+            'gender'          => ['sometimes', Rule::enum(PatientGenderEnum::class)],
             'date_of_birth'   => ['sometimes', 'nullable', 'date', 'before_or_equal:today'],
-            'marital_status'  => ['sometimes', 'nullable', 'in:single,married,divorced,widowed'],
+            'marital_status'  => ['sometimes', 'nullable', Rule::enum(MaritalStatusEnum::class)],
             'phone'           => ['sometimes', 'nullable', 'string', 'max:30'],
             'address'         => ['sometimes', 'nullable', 'string', 'max:1000'],
 
             'height_cm'       => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:300'],
             'weight_kg'       => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:500'],
-            'blood_type'      => ['sometimes', 'nullable', 'string', 'max:10'],
+            'blood_type'      => ['sometimes', 'nullable', Rule::enum(BloodTypeEnum::class)],
 
             'is_smoker'       => ['sometimes', 'nullable', 'boolean'],
             'drinks_alcohol'  => ['sometimes', 'nullable', 'boolean'],

@@ -3,6 +3,7 @@
 namespace App\Modules\Imaging\Models;
 
 use App\Modules\Authentication\Models\Staff;
+use App\Modules\Imaging\Enums\ImagingActivityActionEnum;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -77,23 +78,6 @@ class ImagingActivityLog extends Model
 
     public static function actions(): array
     {
-        return [
-            self::ACTION_REQUEST_CREATED,
-            self::ACTION_REQUEST_CANCELLED,
-            self::ACTION_PAYMENT_CONFIRMED,
-            self::ACTION_PAYMENT_WAIVED,
-            self::ACTION_SENT_TO_TECHNICIAN,
-            self::ACTION_STARTED,
-            self::ACTION_FILE_UPLOADED,
-            self::ACTION_FILE_DELETED,
-            self::ACTION_COMPLETED,
-            self::ACTION_DIRECT_UPLOAD_CREATED,
-            self::ACTION_EXTERNAL_UPLOAD_CREATED,
-            self::ACTION_DEVICE_CREATED,
-            self::ACTION_DEVICE_UPDATED,
-            self::ACTION_DEVICE_ACTIVATED,
-            self::ACTION_DEVICE_DEACTIVATED,
-            self::ACTION_DEVICE_DELETED_OR_RETIRED,
-        ];
+        return ImagingActivityActionEnum::values();
     }
 }

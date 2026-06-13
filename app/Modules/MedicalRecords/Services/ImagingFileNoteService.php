@@ -2,13 +2,11 @@
 
 namespace App\Modules\MedicalRecords\Services;
 
-use App\Modules\Appointments\Models\Appointment;
 use App\Modules\Authentication\Models\Staff;
-use App\Modules\MedicalRecords\Models\ImagingFileNote;
+use App\Modules\MedicalRecords\Helpers\MedicalRecordImagesHelper;
 use App\Modules\MedicalRecords\Repositories\ImagingFileNoteRepository;
 use App\Modules\MedicalRecords\Repositories\MedicalRecordImagingRepository;
 use App\Modules\RolesPermissions\Constants\PermissionList;
-use App\Modules\RolesPermissions\Enums\RoleEnum;
 use App\Modules\RolesPermissions\Helpers\AccessControlHelper;
 use Illuminate\Http\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -19,6 +17,13 @@ class ImagingFileNoteService
         protected ImagingFileNoteRepository $notes,
         protected MedicalRecordImagingRepository $imaging,
     ) {}
+
+    private function authorize(Staff $actor, string $permission, string $messageKey): void
+    {
+        if (! AccessControlHelper::staffHasPermission($actor, $permission)) {
+            throw new HttpException(Response::HTTP_FORBIDDEN, __($messageKey));
+        }
+    }
 
     public function saveNote(int $fileId, array $data, Staff $actor): array
     {
@@ -32,7 +37,7 @@ class ImagingFileNoteService
 
         $patientId = (int) ($file->imagingRequest->patient_id ?? 0);
 
-        $this->ensurePatientAccessible($actor, $patientId);
+        MedicalRecordImagesHelper::ensurePatientAccessible($actor, $patientId);
 
         $note = $data['note'] ?? null;
         if ($note === '') {
@@ -51,51 +56,8 @@ class ImagingFileNoteService
             ]
         );
 
-        return $this->formatNote($record);
+        return MedicalRecordImagesHelper::formatNote($record);
     }
 
-    private function formatNote(ImagingFileNote $note): array
-    {
-        return [
-            'id' => $note->id,
-            'imaging_file_id' => $note->imaging_file_id,
-            'patient_id' => $note->patient_id,
-            'doctor' => $note->doctor ? [
-                'id' => $note->doctor->id,
-                'name' => $note->doctor->name,
-            ] : null,
-            'visit_record_id' => $note->visit_record_id,
-            'note' => $note->note,
-            'updated_at' => optional($note->updated_at)->toISOString(),
-        ];
-    }
 
-    private function ensurePatientAccessible(Staff $actor, int $patientId): void
-    {
-        if ($actor->hasRole(RoleEnum::MEDICAL_CENTER_ADMIN->value, 'api')) {
-            return;
-        }
-
-        if ($actor->hasRole(RoleEnum::DOCTOR->value, 'api')) {
-            if (! config('opticare.is_medical_center', false)) {
-                return;
-            }
-
-            $owns = Appointment::query()
-                ->where('patient_id', $patientId)
-                ->where('doctor_id', $actor->id)
-                ->exists();
-
-            if (! $owns) {
-                throw new HttpException(Response::HTTP_FORBIDDEN, __('medical_record.errors.not_allowed_view_record'));
-            }
-        }
-    }
-
-    private function authorize(Staff $actor, string $permission, string $messageKey): void
-    {
-        if (! AccessControlHelper::staffHasPermission($actor, $permission)) {
-            throw new HttpException(Response::HTTP_FORBIDDEN, __($messageKey));
-        }
-    }
 }

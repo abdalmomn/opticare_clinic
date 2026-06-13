@@ -36,7 +36,7 @@ class AuthService
         }
 
         if (! Hash::check($data['password'], $staff->password)) {
-            $requiresReset = $this->handleFailedLoginAttempt($staff);
+            $requiresReset = AuthHelper::handleFailedLoginAttempt($staff);
 
             if ($requiresReset) {
                 throw new ApiException(
@@ -61,7 +61,7 @@ class AuthService
             );
         }
 
-        $this->clearFailedLoginAttempts($staff);
+        AuthHelper::clearFailedLoginAttempts($staff);
 
         $this->staffRepository->markLastLogin($staff);
 
@@ -108,39 +108,5 @@ class AuthService
         $staff->tokens()
             ->where('id', '!=', $staff->currentAccessToken()->id)
             ->delete();
-    }
-
-    private function handleFailedLoginAttempt(Staff $staff): bool
-    {
-        $maxAttempts = (int) config('opticare.auth.max_failed_login_attempts', 5);
-
-        $attempts = ((int) $staff->failed_login_attempts) + 1;
-
-        $requiresReset = $attempts >= $maxAttempts;
-
-        $staff->forceFill([
-            'failed_login_attempts' => $attempts,
-            'password_reset_required' => $requiresReset,
-            'password_reset_required_at' => $requiresReset ? now() : null,
-        ])->save();
-
-        return $requiresReset;
-    }
-
-    private function clearFailedLoginAttempts(Staff $staff): void
-    {
-        if (
-            (int) $staff->failed_login_attempts === 0
-            && ! $staff->password_reset_required
-            && $staff->password_reset_required_at === null
-        ) {
-            return;
-        }
-
-        $staff->forceFill([
-            'failed_login_attempts' => 0,
-            'password_reset_required' => false,
-            'password_reset_required_at' => null,
-        ])->save();
     }
 }

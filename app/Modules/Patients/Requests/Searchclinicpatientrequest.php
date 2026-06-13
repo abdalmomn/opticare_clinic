@@ -2,7 +2,10 @@
 
 namespace App\Modules\Patients\Requests;
 
+use App\Modules\Patients\Enums\PatientArchiveReasonEnum;
+use App\Modules\Patients\Enums\PatientStatusEnum;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class SearchClinicPatientRequest extends FormRequest
 {
@@ -19,9 +22,9 @@ class SearchClinicPatientRequest extends FormRequest
             'phone'            => ['nullable', 'string', 'max:30'],
             'is_active'        => ['nullable', 'boolean'],
             'per_page'         => ['nullable', 'integer', 'min:1', 'max:100'],
-            'status'           => ['nullable', 'in:active,inactive,archived,deceased'],
+            'status'           => ['nullable', Rule::enum(PatientStatusEnum::class)],
             'include_archived' => ['nullable', 'boolean'],
-            'archive_reason'   => ['nullable', 'in:no_longer_patient,transferred,duplicate,deceased,other'],
+            'archive_reason'   => ['nullable', Rule::enum(PatientArchiveReasonEnum::class)],
         ];
     }
 

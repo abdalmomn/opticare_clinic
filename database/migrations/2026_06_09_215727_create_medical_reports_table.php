@@ -28,8 +28,9 @@ return new class extends Migration
             $table->string('title')->nullable();
             $table->longText('report_text')->nullable();
 
-            $table->enum('status', ['draft', 'finalized'])
-                ->default('draft');
+            $table->string('status', 20)
+                ->default('draft')
+                ->comment('Medical report status: draft, finalized');
 
             $table->timestamp('finalized_at')->nullable();
 

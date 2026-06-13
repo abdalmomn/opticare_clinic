@@ -47,7 +47,8 @@ return new class extends Migration
 
             $table->unsignedBigInteger('upload_batch_id')->nullable();
 
-            $table->string('source')->nullable();
+            $table->string('source', 30)->nullable()
+                ->comment('Imaging file source: technician_upload, doctor_upload, external');
 
             $table->string('file_path');
             $table->string('thumbnail_path')->nullable();

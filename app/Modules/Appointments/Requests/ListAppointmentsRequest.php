@@ -2,7 +2,10 @@
 
 namespace App\Modules\Appointments\Requests;
 
+use App\Modules\Appointments\Enums\AppointmentStatusEnum;
+use App\Modules\Appointments\Enums\AppointmentTypeEnum;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class ListAppointmentsRequest extends FormRequest
 {
@@ -17,8 +20,11 @@ class ListAppointmentsRequest extends FormRequest
             'date' => 'nullable|date',
             'date_from' => 'nullable|date',
             'date_to' => 'nullable|date|after_or_equal:date_from',
-            'status' => 'nullable|string|in:booked,confirmed,waiting,in_progress,completed,cancelled,no_show',
-            'type' => 'nullable|string|in:consultation,follow_up,imaging,consultation_and_imaging,surgery_preparation',
+            'status' => ['nullable', Rule::enum(AppointmentStatusEnum::class)],
+            'type' => [
+                'sometimes',
+                Rule::enum(AppointmentTypeEnum::class),
+            ],
             'patient_id' => 'nullable|integer|exists:clinic_patients,id',
             'doctor_id' => 'nullable|integer|exists:staff,id',
             'keyword' => 'nullable|string|max:255',

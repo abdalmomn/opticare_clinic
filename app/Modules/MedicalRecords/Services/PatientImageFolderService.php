@@ -2,18 +2,15 @@
 
 namespace App\Modules\MedicalRecords\Services;
 
-use App\Modules\Appointments\Models\Appointment;
 use App\Modules\Authentication\Models\Staff;
 use App\Modules\Imaging\Models\ImagingFile;
 use App\Modules\Imaging\Models\ImagingRequest;
+use App\Modules\MedicalRecords\Helpers\MedicalRecordImagesHelper;
 use App\Modules\MedicalRecords\Repositories\MedicalRecordImagingRepository;
 use App\Modules\Patients\Models\ClinicPatient;
 use App\Modules\Patients\Repositories\ClinicPatientRepository;
 use App\Modules\RolesPermissions\Constants\PermissionList;
-use App\Modules\RolesPermissions\Enums\RoleEnum;
-use App\Modules\RolesPermissions\Helpers\AccessControlHelper;
 use Illuminate\Http\Response;
-use Illuminate\Support\Str;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class PatientImageFolderService
@@ -48,20 +45,20 @@ class PatientImageFolderService
 
         $paginator = $this->imaging->foldersForPatient($patient->id, $filters);
 
-        $paginator->getCollection()->transform(fn (ImagingRequest $folder): array => $this->formatFolderItem($folder));
+        $paginator->getCollection()->transform(fn (ImagingRequest $folder): array => MedicalRecordImagesHelper::formatFolderItem($folder));
 
-        return $this->formatPaginated($paginator);
+        return MedicalRecordImagesHelper::formatPaginated($paginator);
     }
 
     public function folderFiles(int $folderId, array $filters, Staff $actor): array
     {
-        $this->authorize($actor, PermissionList::VIEW_IMAGING_TIMELINE, 'medical_record.errors.not_allowed_view_image_folders');
+        MedicalRecordImagesHelper::authorize($actor, PermissionList::VIEW_IMAGING_TIMELINE, 'medical_record.errors.not_allowed_view_image_folders');
 
         $folder = $this->findFolderOrFail($folderId, array_merge($filters, ['doctor_id' => $actor->id]));
 
-        $this->ensurePatientAccessible($actor, (int) $folder->patient_id);
+        MedicalRecordImagesHelper::ensurePatientAccessible($actor, (int) $folder->patient_id);
 
-        $files = $folder->files->map(fn (ImagingFile $file): array => $this->formatFile($file));
+        $files = $folder->files->map(fn (ImagingFile $file): array => MedicalRecordImagesHelper::formatFile($file));
 
         $byType = [];
         foreach ($files as $file) {
@@ -70,7 +67,7 @@ class PatientImageFolderService
         }
 
         return [
-            'folder' => $this->formatFolderHeader($folder),
+            'folder' => MedicalRecordImagesHelper::formatFolderHeader($folder),
             'files_by_type' => $byType,
             'files' => $files->all(),
         ];
@@ -78,7 +75,7 @@ class PatientImageFolderService
 
     public function imagingFile(int $fileId, Staff $actor): array
     {
-        $this->authorize($actor, PermissionList::VIEW_IMAGING_TIMELINE, 'medical_record.errors.not_allowed_view_image_folders');
+        MedicalRecordImagesHelper::authorize($actor, PermissionList::VIEW_IMAGING_TIMELINE, 'medical_record.errors.not_allowed_view_image_folders');
 
         $file = $this->imaging->findFile($fileId, $actor->id);
 
@@ -88,9 +85,9 @@ class PatientImageFolderService
 
         $folder = $file->imagingRequest;
 
-        $this->ensurePatientAccessible($actor, (int) ($folder->patient_id ?? 0));
+        MedicalRecordImagesHelper::ensurePatientAccessible($actor, (int) ($folder->patient_id ?? 0));
 
-        return array_merge($this->formatFile($file), [
+        return array_merge(MedicalRecordImagesHelper::formatFile($file), [
             'folder' => $folder ? [
                 'id' => $folder->id,
                 'label' => optional($folder->created_at)->format('M Y'),
@@ -114,8 +111,8 @@ class PatientImageFolderService
 
         return [
             'image_type' => $imageType,
-            'left' => $this->formatComparisonSide($left, $leftIsHistorical ? 'Historical' : 'Current'),
-            'right' => $this->formatComparisonSide($right, $leftIsHistorical ? 'Current' : 'Historical'),
+            'left' => MedicalRecordImagesHelper::formatComparisonSide($left, $leftIsHistorical ? 'Historical' : 'Current'),
+            'right' => MedicalRecordImagesHelper::formatComparisonSide($right, $leftIsHistorical ? 'Current' : 'Historical'),
         ];
     }
 
@@ -126,8 +123,8 @@ class PatientImageFolderService
         $left = $this->findFileForPatientOrFail((int) $data['left_file_id'], $patient->id, $actor->id);
         $right = $this->findFileForPatientOrFail((int) $data['right_file_id'], $patient->id, $actor->id);
 
-        $leftType = $this->resolvedType($left);
-        $rightType = $this->resolvedType($right);
+        $leftType = MedicalRecordImagesHelper::resolvedType($left);
+        $rightType = MedicalRecordImagesHelper::resolvedType($right);
 
         if ($leftType === null || $rightType === null || $leftType !== $rightType) {
             throw new HttpException(
@@ -138,187 +135,11 @@ class PatientImageFolderService
 
         return [
             'image_type' => $leftType,
-            'same_eye' => $this->nullableMatch($left->eye, $right->eye),
-            'same_region' => $this->nullableMatch($left->region, $right->region),
-            'left' => $this->formatComparisonFileWithFolder($left),
-            'right' => $this->formatComparisonFileWithFolder($right),
+            'same_eye' => MedicalRecordImagesHelper::nullableMatch($left->eye, $right->eye),
+            'same_region' => MedicalRecordImagesHelper::nullableMatch($left->region, $right->region),
+            'left' => MedicalRecordImagesHelper::formatComparisonFileWithFolder($left),
+            'right' => MedicalRecordImagesHelper::formatComparisonFileWithFolder($right),
         ];
-    }
-
-    private function formatFolderItem(ImagingRequest $folder): array
-    {
-        $imagesCount = (int) ($folder->files_count ?? 0);
-
-        $countsByType = [];
-        foreach ($folder->files as $file) {
-            $type = $this->resolvedType($file);
-            if ($type !== null) {
-                $countsByType[$type] = ($countsByType[$type] ?? 0) + 1;
-            }
-        }
-
-        return [
-            'id' => $folder->id,
-            'timeline_type' => 'imaging',
-            'folder_label' => optional($folder->created_at)->format('M Y'),
-            'date' => optional($folder->created_at)->toISOString(),
-            'request_type' => $folder->request_type,
-            'status' => $folder->status,
-            'images_count' => $imagesCount,
-            'available_types' => array_keys($countsByType),
-            'files_count_by_type' => $countsByType,
-            'doctor' => $this->formatDoctor($folder->requestedBy),
-            'is_selectable_for_view' => $imagesCount > 0,
-            'is_selectable_for_report' => $imagesCount > 0,
-            'is_selectable_for_compare' => $imagesCount > 0,
-        ];
-    }
-
-    private function formatFolderHeader(ImagingRequest $folder): array
-    {
-        return [
-            'id' => $folder->id,
-            'label' => optional($folder->created_at)->format('M Y'),
-            'request_type' => $folder->request_type,
-            'date' => optional($folder->created_at)->toISOString(),
-            'doctor' => $this->formatDoctor($folder->requestedBy),
-        ];
-    }
-
-    private function formatFile(ImagingFile $file): array
-    {
-        return [
-            'id' => $file->id,
-            'label' => $this->fileLabel($file),
-            'image_type' => $this->resolvedType($file),
-            'modality' => $file->modality,
-            'eye' => $file->eye,
-            'region' => $file->region,
-            'file_name' => $file->file_name,
-            'file_url' => $this->fileUrl($file->file_path),
-            'thumbnail_url' => $this->thumbnailUrl($file),
-            'captured_at' => optional($file->captured_at)->toISOString(),
-            'notes' => $this->noteFor($file),
-            'is_selectable_for_view' => true,
-            'is_selectable_for_report' => true,
-            'is_selectable_for_compare' => true,
-        ];
-    }
-
-    private function formatComparisonSide(ImagingRequest $folder, string $title): array
-    {
-        return [
-            'folder' => [
-                'id' => $folder->id,
-                'label' => optional($folder->created_at)->format('M Y'),
-                'date' => optional($folder->created_at)->toISOString(),
-                'title' => $title,
-            ],
-            'files' => $folder->files->map(fn (ImagingFile $file): array => $this->formatComparisonFile($file))->all(),
-        ];
-    }
-
-    private function formatComparisonFile(ImagingFile $file): array
-    {
-        return [
-            'id' => $file->id,
-            'label' => $this->fileLabel($file),
-            'image_type' => $this->resolvedType($file),
-            'modality' => $file->modality,
-            'eye' => $file->eye,
-            'region' => $file->region,
-            'file_url' => $this->fileUrl($file->file_path),
-            'thumbnail_url' => $this->thumbnailUrl($file),
-            'notes' => $this->noteFor($file),
-        ];
-    }
-
-    private function formatComparisonFileWithFolder(ImagingFile $file): array
-    {
-        $folder = $file->imagingRequest;
-
-        return array_merge($this->formatComparisonFile($file), [
-            'folder' => $folder ? [
-                'id' => $folder->id,
-                'label' => optional($folder->created_at)->format('M Y'),
-                'date' => optional($folder->created_at)->toISOString(),
-            ] : null,
-        ]);
-    }
-
-    private function formatDoctor(?Staff $staff): ?array
-    {
-        if (! $staff) {
-            return null;
-        }
-
-        return ['id' => $staff->id, 'name' => $staff->name];
-    }
-
-    private function resolvedType(ImagingFile $file): ?string
-    {
-        if ($file->image_type !== null && $file->image_type !== '') {
-            return $file->image_type;
-        }
-
-        return ($file->modality !== null && $file->modality !== '') ? $file->modality : null;
-    }
-
-    private function fileLabel(ImagingFile $file): ?string
-    {
-        if (! empty($file->image_label)) {
-            return $file->image_label;
-        }
-
-        if (! empty($file->region) && ! empty($file->eye)) {
-            return $file->region . ' ' . $file->eye;
-        }
-
-        if (! empty($file->modality)) {
-            return $file->modality;
-        }
-
-        return $file->file_name ? pathinfo($file->file_name, PATHINFO_FILENAME) : null;
-    }
-
-    private function thumbnailUrl(ImagingFile $file): ?string
-    {
-        if (! empty($file->thumbnail_path)) {
-            return $this->fileUrl($file->thumbnail_path);
-        }
-
-        return $this->fileUrl($file->file_path);
-    }
-
-    private function fileUrl(?string $path): ?string
-    {
-        if (empty($path)) {
-            return null;
-        }
-
-        if (Str::startsWith($path, ['http://', 'https://'])) {
-            return $path;
-        }
-
-        return asset('storage/' . ltrim($path, '/'));
-    }
-
-    private function noteFor(ImagingFile $file): ?string
-    {
-        if (! $file->relationLoaded('doctorNotes')) {
-            return null;
-        }
-
-        return optional($file->doctorNotes->first())->note;
-    }
-
-    private function nullableMatch($a, $b): ?bool
-    {
-        if ($a === null || $b === null || $a === '' || $b === '') {
-            return null;
-        }
-
-        return $a === $b;
     }
 
     private function findFolderOrFail(int $folderId, array $options = []): ImagingRequest
@@ -365,17 +186,6 @@ class PatientImageFolderService
         return $file;
     }
 
-    private function prepareAccess(Staff $actor, int $patientId, string $permission, string $messageKey): ClinicPatient
-    {
-        $this->authorize($actor, $permission, $messageKey);
-
-        $patient = $this->findPatientOrFail($patientId);
-
-        $this->ensurePatientAccessible($actor, $patient->id);
-
-        return $patient;
-    }
-
     private function findPatientOrFail(int $patientId): ClinicPatient
     {
         $patient = $this->patients->findPatientById($patientId);
@@ -387,48 +197,14 @@ class PatientImageFolderService
         return $patient;
     }
 
-    private function ensurePatientAccessible(Staff $actor, int $patientId): void
+    private function prepareAccess(Staff $actor, int $patientId, string $permission, string $messageKey): ClinicPatient
     {
-        if ($actor->hasRole(RoleEnum::MEDICAL_CENTER_ADMIN->value, 'api')) {
-            return;
-        }
+        MedicalRecordImagesHelper::authorize($actor, $permission, $messageKey);
 
-        if ($actor->hasRole(RoleEnum::DOCTOR->value, 'api')) {
-            if (! config('opticare.is_medical_center', false)) {
-                return;
-            }
+        $patient = $this->findPatientOrFail($patientId);
 
-            $owns = Appointment::query()
-                ->where('patient_id', $patientId)
-                ->where('doctor_id', $actor->id)
-                ->exists();
+        MedicalRecordImagesHelper::ensurePatientAccessible($actor, $patient->id);
 
-            if (! $owns) {
-                throw new HttpException(Response::HTTP_FORBIDDEN, __('medical_record.errors.not_allowed_view_record'));
-            }
-        }
-    }
-
-    private function authorize(Staff $actor, string $permission, string $messageKey): void
-    {
-        if (! AccessControlHelper::staffHasPermission($actor, $permission)) {
-            throw new HttpException(Response::HTTP_FORBIDDEN, __($messageKey));
-        }
-    }
-
-    private function formatPaginated($paginator): array
-    {
-        return [
-            'items' => $paginator->items(),
-            'pagination' => [
-                'current_page' => $paginator->currentPage(),
-                'per_page' => $paginator->perPage(),
-                'total' => $paginator->total(),
-                'last_page' => $paginator->lastPage(),
-                'from' => $paginator->firstItem(),
-                'to' => $paginator->lastItem(),
-                'has_more' => $paginator->hasMorePages(),
-            ],
-        ];
+        return $patient;
     }
 }

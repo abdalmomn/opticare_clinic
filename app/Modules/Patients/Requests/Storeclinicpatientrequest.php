@@ -2,7 +2,12 @@
 
 namespace App\Modules\Patients\Requests;
 
+use App\Modules\Patients\Enums\BloodTypeEnum;
+use App\Modules\Patients\Enums\IdentityTypeEnum;
+use App\Modules\Patients\Enums\MaritalStatusEnum;
+use App\Modules\Patients\Enums\PatientGenderEnum;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreClinicPatientRequest extends FormRequest
 {
@@ -18,18 +23,18 @@ class StoreClinicPatientRequest extends FormRequest
             'first_name'      => ['required', 'string', 'max:255'],
             'father_name'     => ['nullable', 'string', 'max:255'],
             'last_name'       => ['required', 'string', 'max:255'],
-            'identity_type'   => ['required', 'in:national_id,passport'],
+            'identity_type'   => ['required', Rule::enum(IdentityTypeEnum::class)],
             'identity_number' => ['required', 'string', 'max:50'],
 
-            'gender'          => ['required', 'in:male,female'],
+            'gender'          => ['required', Rule::enum(PatientGenderEnum::class)],
             'date_of_birth'   => ['nullable', 'date', 'before_or_equal:today'],
-            'marital_status'  => ['nullable', 'in:single,married,divorced,widowed'],
+            'marital_status'  => ['nullable', Rule::enum(MaritalStatusEnum::class)],
             'phone'           => ['nullable', 'string', 'max:30'],
             'address'         => ['nullable', 'string', 'max:1000'],
 
             'height_cm'       => ['nullable', 'numeric', 'min:0', 'max:300'],
             'weight_kg'       => ['nullable', 'numeric', 'min:0', 'max:500'],
-            'blood_type'      => ['nullable', 'string', 'max:10'],
+            'blood_type'      => ['nullable', Rule::enum(BloodTypeEnum::class)],
 
             'is_smoker'       => ['nullable', 'boolean'],
             'drinks_alcohol'  => ['nullable', 'boolean'],

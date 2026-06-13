@@ -11,10 +11,12 @@ return new class extends Migration
         Schema::create('messages', function (Blueprint $table) {
             $table->id();
             $table->foreignId('conversation_id')->constrained('conversations')->cascadeOnDelete();
-            $table->string('sender_type'); // patient - staff - ai
+            $table->string('sender_type', 20)
+                ->comment('Message sender type: patient, staff, ai');
             $table->unsignedBigInteger('sender_id')->nullable();
             $table->text('message');
-            $table->string('message_type')->default('text'); // text - image - file - voice
+            $table->string('message_type', 20)->default('text')
+                ->comment('Message type: text, image, file, voice');
             $table->json('attachments')->nullable();
             $table->boolean('is_read')->default(false);
             $table->timestamps();

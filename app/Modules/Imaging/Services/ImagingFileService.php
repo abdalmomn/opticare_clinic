@@ -4,6 +4,8 @@ namespace App\Modules\Imaging\Services;
 
 use App\Modules\Authentication\Models\Staff;
 use App\Modules\Clinic\Models\ClinicDevice;
+use App\Modules\Imaging\Helpers\ImagingHelper;
+use App\Modules\Imaging\Helpers\ImagingRequestHelper;
 use App\Modules\Imaging\Models\ImagingActivityLog;
 use App\Modules\Imaging\Models\ImagingFile;
 use App\Modules\Imaging\Models\ImagingRequest;
@@ -85,12 +87,12 @@ class ImagingFileService
                 }
 
                 return [
-                    'request' => $this->requestService->formatRequest(
+                    'request' => ImagingRequestHelper::formatRequest(
                         $this->requestRepository->findDetailed($imagingRequest->id),
                         $actor
                     ),
                     'files' => array_map(
-                        fn (ImagingFile $file) => $this->requestService->formatFile($file),
+                        fn (ImagingFile $file) => ImagingRequestHelper::formatFile($file),
                         $createdFiles
                     ),
                 ];
@@ -134,15 +136,6 @@ class ImagingFileService
         ];
     }
 
-    /**
-     * Shared storage pipeline used by technician uploads (Phase 5) and
-     * direct/external uploads (Phase 7). Stores each uploaded file on the
-     * public disk and persists its metadata row. Collected $storedPaths let
-     * callers remove orphaned files when the surrounding transaction fails.
-     *
-     * @param  UploadedFile[]  $files
-     * @return ImagingFile[]
-     */
     public function persistFiles(
         ImagingRequest $imagingRequest,
         array $files,
@@ -168,7 +161,7 @@ class ImagingFileService
         foreach ($files as $index => $file) {
             $meta = $metadata[$index] ?? [];
 
-            $item = $this->resolveRequestItem($imagingRequest, $meta['imaging_request_item_id'] ?? null);
+            $item = ImagingHelper::resolveRequestItem($imagingRequest, $meta['imaging_request_item_id'] ?? null);
 
             $extension = strtolower($file->getClientOriginalExtension() ?: $file->extension());
             $storedName = Str::uuid()->toString().($extension !== '' ? '.'.$extension : '');
@@ -240,27 +233,6 @@ class ImagingFileService
         }
 
         return $device;
-    }
-
-    private function resolveRequestItem(ImagingRequest $imagingRequest, $itemId): ?ImagingRequestItem
-    {
-        if (empty($itemId)) {
-            return null;
-        }
-
-        $item = ImagingRequestItem::query()
-            ->whereKey((int) $itemId)
-            ->where('imaging_request_id', $imagingRequest->id)
-            ->first();
-
-        if (! $item) {
-            throw new HttpException(
-                Response::HTTP_UNPROCESSABLE_ENTITY,
-                __('imaging.errors.item_mismatch')
-            );
-        }
-
-        return $item;
     }
 
     private function cleanupStoredFiles(array $storedPaths): void

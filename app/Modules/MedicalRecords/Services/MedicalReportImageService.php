@@ -2,16 +2,15 @@
 
 namespace App\Modules\MedicalRecords\Services;
 
-use App\Modules\Appointments\Models\Appointment;
 use App\Modules\Authentication\Models\Staff;
-use App\Modules\Imaging\Models\ImagingFile;
+use App\Modules\MedicalRecords\Helpers\MedicalRecordHelper;
+use App\Modules\MedicalRecords\Helpers\MedicalRecordImagesHelper;
 use App\Modules\MedicalRecords\Models\MedicalReport;
 use App\Modules\MedicalRecords\Models\MedicalReportImage;
 use App\Modules\MedicalRecords\Repositories\MedicalRecordImagingRepository;
 use App\Modules\MedicalRecords\Repositories\MedicalReportImageRepository;
 use App\Modules\MedicalRecords\Repositories\MedicalReportRepository;
 use App\Modules\RolesPermissions\Constants\PermissionList;
-use App\Modules\RolesPermissions\Enums\RoleEnum;
 use App\Modules\RolesPermissions\Helpers\AccessControlHelper;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -25,6 +24,14 @@ class MedicalReportImageService
         protected MedicalReportImageRepository $reportImages,
     ) {}
 
+
+    private function authorize(Staff $actor, string $permission, string $messageKey): void
+    {
+        if (! AccessControlHelper::staffHasPermission($actor, $permission)) {
+            throw new HttpException(Response::HTTP_FORBIDDEN, __($messageKey));
+        }
+    }
+
     public function attachToReport(int $reportId, array $data, Staff $actor): array
     {
         $this->authorize($actor, PermissionList::CREATE_REPORT, 'medical_record.errors.not_allowed_attach_images');
@@ -35,7 +42,7 @@ class MedicalReportImageService
             throw new HttpException(Response::HTTP_NOT_FOUND, __('medical_record.errors.report_not_found'));
         }
 
-        $this->ensurePatientAccessible($actor, (int) $report->patient_id);
+        MedicalRecordImagesHelper::ensurePatientAccessible($actor, (int) $report->patient_id);
 
         $items = $this->linkSelections(
             $report,
@@ -72,7 +79,7 @@ class MedicalReportImageService
             }
 
             return $this->reportImages->listForReport($report->id)
-                ->map(fn (MedicalReportImage $row): array => $this->formatAttachedImage($row))
+                ->map(fn (MedicalReportImage $row): array => MedicalReportImage::formatAttachedImage($row))
                 ->all();
         });
     }
@@ -93,7 +100,6 @@ class MedicalReportImageService
         }
 
         foreach ($files as $file) {
-            /** @var ImagingFile $file */
             $filePatientId = (int) ($file->imagingRequest->patient_id ?? 0);
 
             if ($filePatientId !== $patientId) {
@@ -110,93 +116,5 @@ class MedicalReportImageService
         }
 
         return array_values($pairs);
-    }
-
-    private function formatAttachedImage(MedicalReportImage $row): array
-    {
-        $file = $row->imagingFile;
-
-        return [
-            'id' => $row->id,
-            'medical_report_id' => $row->medical_report_id,
-            'imaging_request_id' => $row->imaging_request_id,
-            'imaging_file_id' => $row->imaging_file_id,
-            'file' => $file ? [
-                'id' => $file->id,
-                'label' => $this->fileLabel($file),
-                'image_type' => $this->resolvedType($file),
-                'file_url' => $this->fileUrl($file->file_path),
-            ] : null,
-        ];
-    }
-
-
-    private function resolvedType(ImagingFile $file): ?string
-    {
-        if ($file->image_type !== null && $file->image_type !== '') {
-            return $file->image_type;
-        }
-
-        return ($file->modality !== null && $file->modality !== '') ? $file->modality : null;
-    }
-
-    private function fileLabel(ImagingFile $file): ?string
-    {
-        if (! empty($file->image_label)) {
-            return $file->image_label;
-        }
-
-        if (! empty($file->region) && ! empty($file->eye)) {
-            return $file->region . ' ' . $file->eye;
-        }
-
-        if (! empty($file->modality)) {
-            return $file->modality;
-        }
-
-        return $file->file_name ? pathinfo($file->file_name, PATHINFO_FILENAME) : null;
-    }
-
-    private function fileUrl(?string $path): ?string
-    {
-        if (empty($path)) {
-            return null;
-        }
-
-        if (\Illuminate\Support\Str::startsWith($path, ['http://', 'https://'])) {
-            return $path;
-        }
-
-        return asset('storage/' . ltrim($path, '/'));
-    }
-
-
-    private function ensurePatientAccessible(Staff $actor, int $patientId): void
-    {
-        if ($actor->hasRole(RoleEnum::MEDICAL_CENTER_ADMIN->value, 'api')) {
-            return;
-        }
-
-        if ($actor->hasRole(RoleEnum::DOCTOR->value, 'api')) {
-            if (! config('opticare.is_medical_center', false)) {
-                return;
-            }
-
-            $owns = Appointment::query()
-                ->where('patient_id', $patientId)
-                ->where('doctor_id', $actor->id)
-                ->exists();
-
-            if (! $owns) {
-                throw new HttpException(Response::HTTP_FORBIDDEN, __('medical_record.errors.not_allowed_view_record'));
-            }
-        }
-    }
-
-    private function authorize(Staff $actor, string $permission, string $messageKey): void
-    {
-        if (! AccessControlHelper::staffHasPermission($actor, $permission)) {
-            throw new HttpException(Response::HTTP_FORBIDDEN, __($messageKey));
-        }
     }
 }

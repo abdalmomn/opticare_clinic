@@ -2,7 +2,9 @@
 
 namespace App\Modules\Appointments\Requests;
 
+use App\Modules\Appointments\Enums\AppointmentTypeEnum;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateAppointmentRequest extends FormRequest
 {
@@ -16,7 +18,7 @@ class UpdateAppointmentRequest extends FormRequest
         return [
             'doctor_id' => 'sometimes|nullable|integer|exists:staff,id',
             'appointment_at' => 'sometimes|date|after_or_equal:now',
-            'type' => 'sometimes|in:consultation,follow_up,imaging,consultation_and_imaging,surgery_preparation',
+            'type' => ['sometimes', Rule::enum(AppointmentTypeEnum::class)],
             'reason' => 'sometimes|nullable|string|max:1000',
             'notes' => 'sometimes|nullable|string|max:2000',
         ];

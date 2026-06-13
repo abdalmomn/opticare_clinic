@@ -53,20 +53,15 @@ class RolesPermissionsServiceProvider extends ServiceProvider
         });
 
         Gate::define('view-patient-in-center', function (Staff $staff, int $patientId, bool $isCenter = false): bool {
-            // if it's not center-level access, any staff can view the patient, because they are in the same clinic and have access to the same patients
             if (! $isCenter) {
                 return true;
             }
-            // if user is secretary, he can view all patients in his clinic
-            // if user is center-level admin, he can view all patients in the center
             if ($staff->hasAnyRole([
                 RoleEnum::MEDICAL_CENTER_ADMIN->value,
                 RoleEnum::SECRETARY->value,
             ], 'api')) {
                 return true;
             }
-
-            // if user is doctor he can view his patients only, so we check if there is an appointment between the doctor and the patient, if there is an appointment, then the doctor can view the patient
             if ($staff->hasRole(RoleEnum::DOCTOR->value, 'api')) {
                 return Appointment::query()
                     ->where('patient_id', $patientId)

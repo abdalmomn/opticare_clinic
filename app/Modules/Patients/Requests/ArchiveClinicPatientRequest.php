@@ -2,7 +2,9 @@
 
 namespace App\Modules\Patients\Requests;
 
+use App\Modules\Patients\Enums\PatientArchiveReasonEnum;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class ArchiveClinicPatientRequest extends FormRequest
 {
@@ -16,7 +18,9 @@ class ArchiveClinicPatientRequest extends FormRequest
         return [
             'archive_reason' => [
                 'required',
-                'in:no_longer_patient,transferred,duplicate,other',
+                // 'deceased' is excluded here; it is set via the mark-deceased endpoint.
+                Rule::enum(PatientArchiveReasonEnum::class)
+                    ->except([PatientArchiveReasonEnum::DECEASED]),
             ],
             'archive_notes' => [
                 'nullable',

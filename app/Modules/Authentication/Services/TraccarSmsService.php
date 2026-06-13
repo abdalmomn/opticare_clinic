@@ -2,6 +2,7 @@
 
 namespace App\Modules\Authentication\Services;
 
+use App\Modules\Authentication\Helpers\AuthHelper;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -21,7 +22,7 @@ class TraccarSmsService
             throw new HttpException(500, __('auth.errors.traccar_not_configured'));
         }
 
-        $phone = $this->normalizePhone($phone);
+        $phone = AuthHelper::normalizePhone($phone);
 
         $response = Http::withHeaders([
                 'Authorization' => $token,
@@ -47,32 +48,5 @@ class TraccarSmsService
         return $response->json() ?? [
             'sent' => true,
         ];
-    }
-
-    private function normalizePhone(string $phone): string
-    {
-        $phone = preg_replace('/[^0-9+]/', '', $phone);
-
-        if (str_starts_with($phone, '+')) {
-            return $phone;
-        }
-
-        $digits = preg_replace('/[^0-9]/', '', $phone);
-
-        if (str_starts_with($digits, '00')) {
-            return '+' . substr($digits, 2);
-        }
-
-        $countryCode = config('services.traccar_sms.default_country_code', '963');
-
-        if (str_starts_with($digits, '0')) {
-            return '+' . $countryCode . substr($digits, 1);
-        }
-
-        if (str_starts_with($digits, $countryCode)) {
-            return '+' . $digits;
-        }
-
-        return '+' . $countryCode . $digits;
     }
 }

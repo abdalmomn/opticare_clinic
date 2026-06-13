@@ -37,16 +37,20 @@ return new class extends Migration
 
             $table->unsignedBigInteger('invoice_item_id')->nullable();
 
-            $table->string('source')->nullable();
+            $table->string('source', 30)->nullable()
+                ->comment('Imaging request source: doctor_request, secretary_request, doctor_upload, external');
 
             $table->string('request_type');
 
             $table->text('notes')->nullable();
 
-            $table->string('status')->default('pending_payment');
-            $table->string('payment_status')->nullable()->default('pending');
+            $table->string('status', 30)->default('pending_payment')
+                ->comment('Imaging request status: requested, pending_payment, payment_confirmed, ready_for_imaging, in_progress, completed, cancelled (legacy: pending, canceled)');
+            $table->string('payment_status', 20)->nullable()->default('pending')
+                ->comment('Imaging payment status: pending, confirmed, waived, refunded');
 
-            $table->string('priority')->default('normal');
+            $table->string('priority', 20)->default('normal')
+                ->comment('Imaging request priority: normal, urgent');
 
             $table->foreignId('confirmed_by')
                 ->nullable()

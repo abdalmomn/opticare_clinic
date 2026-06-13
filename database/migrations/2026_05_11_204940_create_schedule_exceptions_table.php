@@ -15,7 +15,8 @@ return new class extends Migration
             $table->date('exception_date');
             $table->time('start_time')->nullable();
             $table->time('end_time')->nullable();
-            $table->string('type'); // holiday - maintenance - emergency - custom
+            $table->string('type', 20)
+                ->comment('Schedule exception type: holiday, maintenance, emergency, custom');
             $table->text('reason')->nullable();
             $table->boolean('is_full_day')->default(true);
             $table->timestamps();

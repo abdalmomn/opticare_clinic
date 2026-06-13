@@ -4,19 +4,18 @@ namespace App\Modules\Imaging\Services;
 
 use App\Modules\Appointments\Repositories\AppointmentRepository;
 use App\Modules\Authentication\Models\Staff;
-use App\Modules\Imaging\Models\ImagingActivityLog;
+use App\Modules\Imaging\Helpers\ImagingHelper;
+use App\Modules\Imaging\Helpers\ImagingRequestHelper;
 use App\Modules\Imaging\Models\ImagingFile;
 use App\Modules\Imaging\Models\ImagingRequest;
-use App\Modules\Imaging\Models\ImagingRequestItem;
 use App\Modules\Imaging\Repositories\ImagingRequestRepository;
 use App\Modules\MedicalRecords\Repositories\VisitRecordRepository;
 use App\Modules\Patients\Repositories\ClinicPatientRepository;
 use App\Modules\RolesPermissions\Constants\PermissionList;
-use App\Modules\RolesPermissions\Helpers\AccessControlHelper;
-use Illuminate\Http\Response;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use Illuminate\Support\Facades\DB;
+use App\Modules\Imaging\Models\ImagingActivityLog;
+use Illuminate\Http\Response;
 
 class DirectImagingUploadService
 {
@@ -32,7 +31,7 @@ class DirectImagingUploadService
 
     public function directUpload(array $data, Staff $actor): array
     {
-        $this->ensurePermission($actor, PermissionList::UPLOAD_DOCTOR_IMAGING_FILES);
+        ImagingHelper::ensurePermission($actor, PermissionList::UPLOAD_DOCTOR_IMAGING_FILES);
 
         return $this->handleUpload(
             $data,
@@ -45,7 +44,7 @@ class DirectImagingUploadService
 
     public function externalUpload(array $data, Staff $actor): array
     {
-        $this->ensurePermission($actor, PermissionList::UPLOAD_EXTERNAL_IMAGING_FILES);
+        ImagingHelper::ensurePermission($actor, PermissionList::UPLOAD_EXTERNAL_IMAGING_FILES);
 
         return $this->handleUpload(
             $data,
@@ -96,7 +95,7 @@ class DirectImagingUploadService
             }
         }
 
-        $this->ensureConsistency($patient->id, $visitRecord, $appointment);
+        ImagingHelper::ensureConsistency($patient->id, $visitRecord, $appointment);
 
         $files = array_values($data['files']);
         $metadata = array_values($data['metadata'] ?? []);
@@ -134,7 +133,7 @@ class DirectImagingUploadService
                     'visit_record_id' => $visitRecord?->id,
                     'appointment_id' => $appointment?->id,
                     'requested_by' => $actor->id,
-                    'request_type' => $this->buildRequestTypeSummary($metadata),
+                    'request_type' => ImagingHelper::buildRequestTypeSummary($metadata),
                     'source' => $requestSource,
                     'notes' => $data['notes'] ?? null,
                     'status' => ImagingRequest::STATUS_COMPLETED,
@@ -144,7 +143,7 @@ class DirectImagingUploadService
                     'completed_at' => now(),
                 ]);
 
-                $metadata = $this->attachItemsToMetadata($imagingRequest, $metadata);
+                $metadata = ImagingHelper::attachItemsToMetadata($imagingRequest, $metadata);
 
                 $createdFiles = $this->fileService->persistFiles(
                     $imagingRequest,
@@ -166,109 +165,21 @@ class DirectImagingUploadService
                 );
 
                 return [
-                    'request' => $this->requestService->formatRequest(
+                    'request' => ImagingRequestHelper::formatRequest(
                         $this->requestRepository->findDetailed($imagingRequest->id),
                         $actor
                     ),
                     'files' => array_map(
-                        fn (ImagingFile $file) => $this->requestService->formatFile($file),
+                        fn (ImagingFile $file) => ImagingRequestHelper::formatFile($file),
                         $createdFiles
                     ),
                 ];
             });
         } catch (\Throwable $exception) {
-            $this->cleanupStoredFiles($storedPaths);
+            ImagingHelper::cleanupStoredFiles($storedPaths);
 
             throw $exception;
         }
     }
 
-    /**
-     * Creates one captured request item per distinct uploaded type so the
-     * completed container exposes the same requested_types contract as
-     * technician-handled requests, then links each file's metadata to it.
-     */
-    private function attachItemsToMetadata(ImagingRequest $imagingRequest, array $metadata): array
-    {
-        $itemIdsByKey = [];
-
-        foreach ($metadata as $index => $meta) {
-            $key = implode('|', [
-                $meta['image_type'],
-                $meta['eye'] ?? '',
-                $meta['region'] ?? '',
-            ]);
-
-            if (! isset($itemIdsByKey[$key])) {
-                $item = $imagingRequest->items()->create([
-                    'image_type' => $meta['image_type'],
-                    'eye' => $meta['eye'] ?? null,
-                    'region' => $meta['region'] ?? null,
-                    'status' => ImagingRequestItem::STATUS_CAPTURED,
-                ]);
-
-                $itemIdsByKey[$key] = $item->id;
-            }
-
-            $metadata[$index]['imaging_request_item_id'] = $itemIdsByKey[$key];
-        }
-
-        return $metadata;
-    }
-
-    private function buildRequestTypeSummary(array $metadata): string
-    {
-        $types = array_values(array_unique(array_map(
-            fn (array $meta) => trim((string) $meta['image_type']),
-            $metadata
-        )));
-
-        return implode(' + ', $types);
-    }
-
-    private function ensureConsistency(
-        int $patientId,
-        ?\App\Modules\MedicalRecords\Models\VisitRecord $visitRecord,
-        ?\App\Modules\Appointments\Models\Appointment $appointment
-    ): void {
-        if ($visitRecord && (int) $visitRecord->patient_id !== $patientId) {
-            throw new HttpException(
-                Response::HTTP_UNPROCESSABLE_ENTITY,
-                __('imaging.errors.visit_patient_mismatch')
-            );
-        }
-
-        if ($appointment && (int) $appointment->patient_id !== $patientId) {
-            throw new HttpException(
-                Response::HTTP_UNPROCESSABLE_ENTITY,
-                __('imaging.errors.appointment_patient_mismatch')
-            );
-        }
-
-        if ($visitRecord && $appointment && $visitRecord->appointment_id !== null && $visitRecord->appointment_id !== $appointment->id) {
-            throw new HttpException(
-                Response::HTTP_UNPROCESSABLE_ENTITY,
-                __('imaging.errors.visit_appointment_conflict')
-            );
-        }
-    }
-
-    private function ensurePermission(Staff $actor, string $permission): void
-    {
-        if (! AccessControlHelper::staffHasPermission($actor, $permission)) {
-            throw new HttpException(
-                Response::HTTP_FORBIDDEN,
-                __('imaging.errors.not_allowed_upload')
-            );
-        }
-    }
-
-    private function cleanupStoredFiles(array $storedPaths): void
-    {
-        if ($storedPaths === []) {
-            return;
-        }
-
-        Storage::disk(ImagingFileService::STORAGE_DISK)->delete($storedPaths);
-    }
 }

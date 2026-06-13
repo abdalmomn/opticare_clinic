@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Modules\Clinic\Models\ClinicPatient;
 use App\Modules\Authentication\Models\Staff;
+use App\Modules\Chat\Enums\ConversationStatusEnum;
 
 class Conversation extends Model
 {
@@ -16,7 +17,10 @@ class Conversation extends Model
         'patient_id', 'assigned_staff_id', 'status', 'last_message_at',
     ];
 
-    protected $casts = ['last_message_at' => 'datetime'];
+    protected $casts = [
+        'last_message_at' => 'datetime',
+        'status' => ConversationStatusEnum::class,
+    ];
 
     public function patient(): BelongsTo
     {

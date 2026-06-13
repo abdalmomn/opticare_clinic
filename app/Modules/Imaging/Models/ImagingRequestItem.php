@@ -2,6 +2,7 @@
 
 namespace App\Modules\Imaging\Models;
 
+use App\Modules\Imaging\Enums\ImagingRequestItemStatusEnum;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -37,10 +38,6 @@ class ImagingRequestItem extends Model
 
     public static function statuses(): array
     {
-        return [
-            self::STATUS_REQUESTED,
-            self::STATUS_CAPTURED,
-            self::STATUS_SKIPPED,
-        ];
+        return ImagingRequestItemStatusEnum::values();
     }
 }

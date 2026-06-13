@@ -4,12 +4,12 @@ namespace App\Modules\Imaging\Services;
 
 use App\Modules\Authentication\Models\Staff;
 use App\Modules\Clinic\Models\ClinicDevice;
+use App\Modules\Imaging\Helpers\ImagingHelper;
 use App\Modules\Imaging\Models\ImagingActivityLog;
 use App\Modules\Imaging\Repositories\ImagingDeviceRepository;
 use App\Modules\RolesPermissions\Constants\PermissionList;
 use App\Modules\RolesPermissions\Helpers\AccessControlHelper;
 use Illuminate\Http\Response;
-use Illuminate\Support\Carbon;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class ImagingDeviceService
@@ -27,6 +27,17 @@ class ImagingDeviceService
         protected ImagingActivityLogService $activityLog
     ) {}
 
+
+    private function ensurePermission(Staff $actor, string $permission, string $errorKey): void
+    {
+        if (! AccessControlHelper::staffHasPermission($actor, $permission)) {
+            throw new HttpException(
+                Response::HTTP_FORBIDDEN,
+                __('imaging.errors.'.$errorKey)
+            );
+        }
+    }
+
     public function list(array $filters, Staff $actor): array
     {
         $this->ensurePermission($actor, PermissionList::VIEW_DEVICES, 'not_allowed_view_devices');
@@ -35,7 +46,7 @@ class ImagingDeviceService
 
         return [
             'items' => $paginator->getCollection()
-                ->map(fn (ClinicDevice $device) => $this->formatDevice($device))
+                ->map(fn (ClinicDevice $device) => ImagingHelper::formatDevice($device))
                 ->all(),
             'pagination' => [
                 'current_page' => $paginator->currentPage(),
@@ -53,7 +64,7 @@ class ImagingDeviceService
     {
         $this->ensurePermission($actor, PermissionList::VIEW_DEVICES, 'not_allowed_view_devices');
 
-        return ['device' => $this->formatDevice($this->resolveDevice($device))];
+        return ['device' => ImagingHelper::formatDevice($this->resolveDevice($device))];
     }
 
     public function create(array $data, Staff $actor): array
@@ -81,7 +92,7 @@ class ImagingDeviceService
             metadata: ['device_id' => $device->id, 'name' => $device->name]
         );
 
-        return ['device' => $this->formatDevice($this->repository->findWithRelations($device->id))];
+        return ['device' => ImagingHelper::formatDevice($this->repository->findWithRelations($device->id))];
     }
 
     public function update($device, array $data, Staff $actor): array
@@ -115,7 +126,7 @@ class ImagingDeviceService
             metadata: ['device_id' => $clinicDevice->id, 'name' => $clinicDevice->name]
         );
 
-        return ['device' => $this->formatDevice($this->repository->findWithRelations($clinicDevice->id))];
+        return ['device' => ImagingHelper::formatDevice($this->repository->findWithRelations($clinicDevice->id))];
     }
 
     public function toggleStatus($device, Staff $actor): array
@@ -156,7 +167,7 @@ class ImagingDeviceService
         );
 
         return [
-            'device' => $this->formatDevice(
+            'device' => ImagingHelper::formatDevice(
                 $this->repository->findWithRelations($clinicDevice->id)
             ),
         ];
@@ -183,7 +194,7 @@ class ImagingDeviceService
             return [
                 'deleted' => false,
                 'retired_instead' => true,
-                'device' => $this->formatDevice($this->repository->findWithRelations($clinicDevice->id)),
+                'device' => ImagingHelper::formatDevice($this->repository->findWithRelations($clinicDevice->id)),
             ];
         }
 
@@ -205,6 +216,7 @@ class ImagingDeviceService
         ];
     }
 
+
     private function resolveDevice($device): ClinicDevice
     {
         $clinicDevice = $this->repository->findWithRelations(
@@ -219,44 +231,5 @@ class ImagingDeviceService
         }
 
         return $clinicDevice;
-    }
-
-    private function ensurePermission(Staff $actor, string $permission, string $errorKey): void
-    {
-        if (! AccessControlHelper::staffHasPermission($actor, $permission)) {
-            throw new HttpException(
-                Response::HTTP_FORBIDDEN,
-                __('imaging.errors.'.$errorKey)
-            );
-        }
-    }
-
-    private function formatDevice(ClinicDevice $device): array
-    {
-        return [
-            'id' => $device->id,
-            'name' => $device->name,
-            'device_identifier' => $device->device_identifier,
-            'serial_number' => $device->serial_number,
-            'device_type' => $device->device_type,
-            'manufacturer' => $device->manufacturer,
-            'model' => $device->model,
-            'status' => $device->status,
-            'room' => $device->room
-                ? ['id' => $device->room->id, 'name' => $device->room->name]
-                : null,
-            'last_maintenance_at' => $device->last_maintenance_at
-                ? Carbon::parse($device->last_maintenance_at)->format('Y-m-d')
-                : null,
-            'notes' => $device->notes,
-            'created_by' => $device->createdBy
-                ? ['id' => $device->createdBy->id, 'name' => $device->createdBy->name]
-                : null,
-            'updated_by' => $device->updatedBy
-                ? ['id' => $device->updatedBy->id, 'name' => $device->updatedBy->name]
-                : null,
-            'created_at' => $device->created_at?->toISOString(),
-            'updated_at' => $device->updated_at?->toISOString(),
-        ];
     }
 }

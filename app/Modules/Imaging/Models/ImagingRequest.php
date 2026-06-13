@@ -5,6 +5,7 @@ namespace App\Modules\Imaging\Models;
 use App\Modules\Appointments\Models\Appointment;
 use App\Modules\Authentication\Models\Staff;
 use App\Modules\Clinic\Models\Room;
+use App\Modules\Imaging\Enums\ImagingRequestStatusEnum;
 use App\Modules\MedicalRecords\Models\VisitRecord;
 use App\Modules\Patients\Models\ClinicPatient;
 use App\Modules\Payments\Models\InvoiceItem;
@@ -162,15 +163,7 @@ class ImagingRequest extends Model
 
     public static function statuses(bool $includeLegacy = false): array
     {
-        $statuses = [
-            self::STATUS_REQUESTED,
-            self::STATUS_PENDING_PAYMENT,
-            self::STATUS_PAYMENT_CONFIRMED,
-            self::STATUS_READY_FOR_IMAGING,
-            self::STATUS_IN_PROGRESS,
-            self::STATUS_COMPLETED,
-            self::STATUS_CANCELLED,
-        ];
+        $statuses = ImagingRequestStatusEnum::values();
 
         return $includeLegacy
             ? [...$statuses, self::LEGACY_STATUS_PENDING, self::LEGACY_STATUS_CANCELED]

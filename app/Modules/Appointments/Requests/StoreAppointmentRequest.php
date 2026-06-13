@@ -2,7 +2,9 @@
 
 namespace App\Modules\Appointments\Requests;
 
+use App\Modules\Appointments\Enums\AppointmentTypeEnum;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreAppointmentRequest extends FormRequest
 {
@@ -17,7 +19,7 @@ class StoreAppointmentRequest extends FormRequest
             'patient_id' => 'required|integer|exists:clinic_patients,id',
             'doctor_id' => 'nullable|integer|exists:staff,id',
             'appointment_at' => 'required|date|after_or_equal:now',
-            'type' => 'required|in:consultation,follow_up,imaging,consultation_and_imaging,surgery_preparation',
+            'type' => ['required', Rule::enum(AppointmentTypeEnum::class)],
             'reason' => 'nullable|string|max:1000',
             'notes' => 'nullable|string|max:2000',
         ];

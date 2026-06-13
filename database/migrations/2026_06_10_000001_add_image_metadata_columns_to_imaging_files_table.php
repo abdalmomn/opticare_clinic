@@ -14,7 +14,8 @@ return new class extends Migration
             }
 
             if (! Schema::hasColumn('imaging_files', 'eye')) {
-                $table->enum('eye', ['OD', 'OS', 'OU'])->nullable()->after('image_type');
+                $table->string('eye', 5)->nullable()->after('image_type')
+                    ->comment('Eye laterality: OD (right), OS (left), OU (both)');
             }
 
             if (! Schema::hasColumn('imaging_files', 'region')) {

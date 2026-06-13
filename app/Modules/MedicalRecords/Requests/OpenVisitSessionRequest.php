@@ -2,7 +2,7 @@
 
 namespace App\Modules\MedicalRecords\Requests;
 
-use App\Modules\MedicalRecords\Models\VisitRecord;
+use App\Modules\MedicalRecords\Enums\VisitTypeEnum;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -16,7 +16,7 @@ class OpenVisitSessionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'visit_type' => ['nullable', 'string', Rule::in(VisitRecord::types())],
+            'visit_type' => ['nullable', Rule::enum(VisitTypeEnum::class)],
             'notes' => 'nullable|string|max:5000',
         ];
     }

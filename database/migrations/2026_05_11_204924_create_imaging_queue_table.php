@@ -27,7 +27,8 @@ return new class extends Migration
 
             $table->integer('queue_number')->nullable();
 
-            $table->string('status')->default('waiting');
+            $table->string('status', 20)->default('waiting')
+                ->comment('Imaging queue status: waiting, dispatched, in_progress, completed, cancelled');
 
             $table->dateTime('called_at')->nullable();
 

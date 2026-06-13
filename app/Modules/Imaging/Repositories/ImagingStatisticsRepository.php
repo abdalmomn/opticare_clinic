@@ -140,8 +140,6 @@ class ImagingStatisticsRepository extends BaseRepository
             $query->where('device_id', $filters['device_id']);
         }
 
-        // `source` always refers to the parent request container source so the
-        // overview, by-device, and by-type endpoints agree on its meaning.
         if (! empty($filters['source'])
             || ! empty($filters['doctor_id'])
             || ! empty($filters['technician_id'])

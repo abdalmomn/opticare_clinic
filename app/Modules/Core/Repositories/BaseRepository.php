@@ -16,22 +16,10 @@ abstract class BaseRepository
         $this->model = $model;
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Base Query
-    |--------------------------------------------------------------------------
-    */
-
     public function query(): Builder
     {
         return $this->model->newQuery();
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Get Records
-    |--------------------------------------------------------------------------
-    */
 
     public function all(array $columns = ['*'], array $relations = []): EloquentCollection
     {
@@ -47,7 +35,8 @@ abstract class BaseRepository
         array $columns = ['*'],
         string $orderBy = 'id',
         string $direction = 'desc'
-    ): LengthAwarePaginator {
+    ):LengthAwarePaginator
+    {
         return $this->applyConditions(
                 $this->query()->with($relations),
                 $conditions
@@ -62,7 +51,8 @@ abstract class BaseRepository
         array $relations = [],
         string $orderBy = 'id',
         string $direction = 'desc'
-    ): EloquentCollection {
+    ):EloquentCollection
+    {
         return $this->applyConditions(
                 $this->query()->with($relations),
                 $conditions
@@ -71,150 +61,99 @@ abstract class BaseRepository
             ->get($columns);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Find One Record
-    |--------------------------------------------------------------------------
-    */
-
-    public function findById(
-        int|string $id,
-        array $columns = ['*'],
-        array $relations = []
-    ): ?Model {
+    public function findById(int|string $id, array $columns = ['*'],array $relations = []):?Model
+    {
         return $this->query()
             ->with($relations)
             ->find($id, $columns);
     }
 
-    public function findOrFail(
-        int|string $id,
-        array $columns = ['*'],
-        array $relations = []
-    ): Model {
+    public function findOrFail(int|string $id,array $columns = ['*'],array $relations = []):Model
+    {
         return $this->query()
             ->with($relations)
             ->findOrFail($id, $columns);
     }
 
-    public function firstWhere(
-        string $column,
-        mixed $value,
-        array $columns = ['*'],
-        array $relations = []
-    ): ?Model {
+    public function firstWhere(string $column, mixed $value, array $columns = ['*'], array $relations = []):?Model
+    {
         return $this->query()
             ->with($relations)
             ->where($column, $value)
             ->first($columns);
     }
 
-    public function firstByConditions(
-        array $conditions,
-        array $columns = ['*'],
-        array $relations = []
-    ): ?Model {
-        return $this->applyConditions(
-                $this->query()->with($relations),
-                $conditions
-            )
-            ->first($columns);
+    public function firstByConditions(array $conditions, array $columns = ['*'], array $relations = []):?Model
+    {
+        return $this->applyConditions($this->query()->with($relations),$conditions)->first($columns);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Create / Update
-    |--------------------------------------------------------------------------
-    */
-
-    public function create(array $data): Model
+    public function create(array $data):Model
     {
         return $this->query()->create($data);
     }
 
-    public function createMany(array $items): EloquentCollection
+    public function createMany(array $items):EloquentCollection
     {
         $created = collect();
 
         foreach ($items as $item) {
             $created->push($this->create($item));
         }
-
         return new EloquentCollection($created);
     }
 
-    public function updateById(int|string $id, array $data): Model
+    public function updateById(int|string $id, array $data):Model
     {
         $record = $this->findOrFail($id);
-
         $record->fill($data);
         $record->save();
 
         return $record->refresh();
     }
 
-    public function updateWhere(array $conditions, array $data): int
+    public function updateWhere(array $conditions, array $data):int
     {
-        return $this->applyConditions($this->query(), $conditions)
-            ->update($data);
+        return $this->applyConditions($this->query(), $conditions)->update($data);
     }
 
-    public function updateOrCreate(array $conditions, array $data): Model
+    public function updateOrCreate(array $conditions, array $data):Model
     {
         return $this->query()->updateOrCreate($conditions, $data);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Delete
-    |--------------------------------------------------------------------------
-    */
-
-    public function deleteById(int|string $id): bool
+    public function deleteById(int|string $id):bool
     {
         $record = $this->findOrFail($id);
-
         return (bool) $record->delete();
     }
 
-    public function deleteWhere(array $conditions): int
+    public function deleteWhere(array $conditions):int
     {
-        return $this->applyConditions($this->query(), $conditions)
-            ->delete();
+        return $this->applyConditions($this->query(), $conditions)->delete();
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Helpers
-    |--------------------------------------------------------------------------
-    */
-
-    public function exists(array $conditions): bool
+    public function exists(array $conditions):bool
     {
-        return $this->applyConditions($this->query(), $conditions)
-            ->exists();
+        return $this->applyConditions($this->query(), $conditions)->exists();
     }
 
-    public function count(array $conditions = []): int
+    public function count(array $conditions = []):int
     {
-        return $this->applyConditions($this->query(), $conditions)
-            ->count();
+        return $this->applyConditions($this->query(), $conditions)->count();
     }
 
-    protected function applyConditions(Builder $query, array $conditions): Builder
+    protected function applyConditions(Builder $query, array $conditions):Builder
     {
         foreach ($conditions as $column => $value) {
             if (is_array($value)) {
                 $operator = $value[0] ?? '=';
                 $conditionValue = $value[1] ?? null;
-
                 $query->where($column, $operator, $conditionValue);
                 continue;
             }
-
             $query->where($column, $value);
         }
-
         return $query;
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Modules\MedicalRecords\Requests;
 
+use App\Modules\Core\Enums\EyeEnum;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -16,7 +17,7 @@ class FolderFilesRequest extends FormRequest
     {
         return [
             'image_type' => 'nullable|string|max:50',
-            'eye' => ['nullable', 'string', Rule::in(['OD', 'OS', 'OU'])],
+            'eye' => ['nullable', Rule::enum(EyeEnum::class)],
             'region' => 'nullable|string|max:100',
         ];
     }

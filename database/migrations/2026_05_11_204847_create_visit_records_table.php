@@ -25,15 +25,13 @@ return new class extends Migration
                 ->constrained('staff')
                 ->nullOnDelete();
 
-            $table->enum('status', ['draft', 'finalized', 'cancelled'])
-                ->default('draft');
+            $table->string('status', 20)
+                ->default('draft')
+                ->comment('Visit record status: draft, finalized, cancelled');
 
-            $table->enum('visit_type', [
-                'consultation',
-                'follow_up',
-                'emergency',
-                'post_op',
-            ])->default('consultation');
+            $table->string('visit_type', 20)
+                ->default('consultation')
+                ->comment('Visit type: consultation, follow_up, emergency, post_op');
 
             $table->dateTime('visit_at')->nullable();
 

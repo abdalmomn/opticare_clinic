@@ -21,7 +21,6 @@ class VisitDiagnosisCodeRepository extends BaseRepository
     ): void {
         $codeIds = array_values(array_unique(array_map('intval', $codeIds)));
 
-        // Remove links that are no longer selected.
         $this->model->newQuery()
             ->where('visit_record_id', $visitId)
             ->when(
